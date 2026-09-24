@@ -13,7 +13,8 @@ feet (BrainFly.liftoff / pullOff), which is counted as a take-off, and the dust 
   flight  - the standing body takes off (wings + jump muscle beat weight + grip, see LIFTOFF below)
   groom   - the front legs rub (the grooming command is above 0.3 for at least 0.3 s)
   walk    - it walks (path > 0.08 units) or turns (> 0.35 rad)
-  twitch  - the head, abdomen or a leg moves visibly (head > 0.1 rad, abdomen curl > 0.15, leg offset > 0.02)
+  twitch  - the head, abdomen, a leg or a wing moves visibly (head > 0.1 rad, abdomen curl > 0.15, leg offset > 0.02, a wing more than
+            two thirds open)
   none    - nothing visible
 
 STEP_MS=16 (environment) steps as a busy widget does, the default 50 ms is faster to run. Rates are low-passed with 30 ms
@@ -54,7 +55,13 @@ TURN_HZ, TURN_RATE = 30.0, 2.2
 clamp = lambda x, a, b: min(max(x, a), b)
 damp = lambda rate, dt: 1 - math.exp(-rate * dt)
 
-REST = {'pr_L': 8, 'pr_R': 8} | {f'{k}_{l}_{s}': v for k, v in (('prop_leg', 7), ('touch_leg', 5)) for l in 'fmh' for s in 'LR'}
+
+def smooth(x, a, b):  # smoothstep
+    t = clamp((x - a) / (b - a), 0, 1)
+    return t * t * (3 - 2 * t)
+
+
+REST = {'pr_L': 8, 'pr_R': 8} | {f'{k}_leg_{l}_{s}': 7 for k in ('cs', 'co', 'hp', 'lg') for l in 'fmh' for s in 'LR'} | {f'touch_leg_{l}_{s}': 5 for l in 'fmh' for s in 'LR'}
 STEP_MS = int(os.environ.get('STEP_MS', 50))  # the widget steps by one frame: 16 ms while something happens, 50 ms when idle
 SMOOTH_MS = 30.0  # BrainLink: read-outs are low-passed
 smoothed = {}
@@ -135,6 +142,11 @@ def step(active):
             pull = clamp(r[f'mn_leg_{leg}_st_{s}'] / 50, 0, 1)
             twitch = max(twitch, math.hypot(0.04 * lift, 0.1 * lift - 0.04 * pull, 0.06 * (lift - pull)))
     head = abs(clamp(0.03 * (r['mn_neck_L'] - r['mn_neck_R']), -0.6, 0.6))
+    # a wing that opens (BrainFly.read: its power muscles or its wing motor neurons) counts as a visible movement
+    for side in 'LR':
+        p = clamp((r[f'mn_dlm_{side}'] + r[f'mn_dvm_{side}']) / 2 / POWER_HZ, 0, 1.6)
+        opening = max(smooth(p, 0.08, 0.3), clamp((r[f'mn_wing_{side}'] - 5) / 15, 0, 1))
+        twitch = max(twitch, 0.03 * opening)
     abd = clamp((r['mn_abd_L'] + r['mn_abd_R']) / 2 / 60, 0, 1)
     return twitch, head, abd
 

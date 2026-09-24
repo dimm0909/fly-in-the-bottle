@@ -13,9 +13,11 @@ import { JAR, innerRadiusAt } from './jar.js';
 // There is no behaviour script: nothing here decides to fly, walk, groom or right itself. The only rules are
 // the physics of the body (the wings and the jump muscle push against the weight and the grip of the feet, a knock
 // spins a body that has nothing to hold it upright, feet stick to glass) and the gain constants. What the body
-// supplies is rhythm: the network has no rhythm generator, so the feet plant and swing on their own (poseLegs in
-// fly.js) as the body is carried along by the walking command, and the front legs rub at a fixed pace when the
-// grooming neurons fire.
+// supplies is rhythm: the network has no rhythm generator (tools/explore/explore17.py, explore18.py: nothing in the
+// leg pools, with or without the legs in the loop), so the feet plant and swing on their own (poseLegs in fly.js) as the
+// body is carried along by the walking command, the wings beat at a fixed 11.3 Hz and the front legs rub at a fixed
+// pace when the grooming neurons fire. The network does decide, for each wing separately, how far it swings and
+// whether it is open, how far each haltere swings, and which way the fly turns.
 
 const { Vector3: V3, Quaternion } = THREE;
 const clamp = (x, a, b) => Math.min(Math.max(x, a), b);
@@ -31,12 +33,27 @@ const FLOOR_REST = JAR.FLOOR_Y + BODY_H;
 const AMBIENT_LIGHT = 8;
 const LEG_LOAD = 7; // campaniform sensilla / hair plates while standing
 const LEG_TOUCH = 5;
+// What the legs report while they stand (BrainFly.sense): load on the campaniform sensilla, position and speed of the
+// leg on the chordotonal organs, the ends of the range on the hair plates. All are LEG_LOAD when the leg stands at rest.
+const CO_POSITION = 3; // mV per stride that the foot has drifted behind its standing spot (a foot at or ahead of it adds nothing: a leg at rest must stay at LEG_LOAD, the network wakes up above it)
+const CO_SPEED = 4; // mV at CO_SPEED_MAX strides per second (a swinging foot does about 13, a standing one at full walk 6)
+const CO_SPEED_MAX = 15;
+const HP_RANGE = 8; // mV extra at the ends of the range (|position| above 0.7 strides)
 const TOUCH = 12; // a poke
 const VIBRATION = 12; // a knock on the glass
 const HALTERE_PER_RAD = 0.9; // haltere drive per rad/s of body rotation: the halteres are the gyroscopes
 // A small object moving in the visual field, strength 0..1: LC10d on its side steers, LC9 on both sides walks.
 const OBJECT_STEER = [7, 3]; // mV = base + gain * strength (nothing below ~7.5 mV, see explore12.py)
 const OBJECT_WALK = [6.5, 2];
+
+// Wing steering: the two wings get their own stroke, and the fly turns towards the weaker one.
+const WSTEER_HZ = 40; // left-minus-right steering signal (Hz) that counts as a full turn
+const WSTEER_BIAS = 0.08; // a symmetric stimulus makes the left steering pool 8% more active than the right one: subtracted
+const HALTERE_STEER = 1.2; // the haltere motor neurons, left minus right, count this much against the steering muscles
+const WING_ASYM = 0.35; // a full steering signal makes one wing this much smaller and the other this much bigger
+const WING_REST_HZ = 5; // wing motor neurons of one side (mn_wing) below this rate keep that wing folded
+const WING_OPEN_HZ = 15; // ... and this far above it opens it fully
+const HALTERE_HZ = 30; // haltere motor neuron rate that gives the full haltere stroke
 
 // ---- read-out gains ----
 const POWER_HZ = 140; // DLM/DVM rate that counts as full flight power
@@ -94,6 +111,8 @@ const AMBIENT_EVENTS = [
 ];
 const AMBIENT_TOTAL = AMBIENT_EVENTS.reduce((sum, e) => sum + e.w, 0);
 
+const LEG_SENSORS = ['cs', 'co', 'hp', 'lg']; // campaniform sensilla, chordotonal organs, hair plates, the rest (tools/build_groups.py)
+
 const _up = new V3();
 const _h = new V3();
 const _v = new V3();
@@ -118,7 +137,7 @@ export function restingDrive() {
   const drive = { pr_L: AMBIENT_LIGHT, pr_R: AMBIENT_LIGHT };
   for (const leg of 'fmh') {
     for (const side of 'LR') {
-      drive[`prop_leg_${leg}_${side}`] = LEG_LOAD;
+      for (const kind of LEG_SENSORS) drive[`${kind}_leg_${leg}_${side}`] = LEG_LOAD;
       drive[`touch_leg_${leg}_${side}`] = LEG_TOUCH;
     }
   }
@@ -135,6 +154,9 @@ export class BrainFly extends Fly {
     this.passing = { s: 0, side: 'R', until: 0 }; // a random object event in progress
     this.nextAmbient = AMBIENT_GAP[0] - AMBIENT_GAP[1] * Math.log(1 - Math.random());
     this.power = 0; // smoothed flight power, 0..1.5
+    this.powerSide = [0, 0]; // left, right
+    this.wingGoal = [{ amp: 0, fold: 1 }, { amp: 0, fold: 1 }]; // what the network asks of each wing
+    this.haltereGoal = [0, 0]; // and of each haltere
     this.steer = 0;
     this.walk = 0; // smoothed walking command, -1 (backwards) .. 1 (forwards)
     this.turn = 0; // smoothed turning command, -1 (right) .. 1 (left)
@@ -249,8 +271,10 @@ export class BrainFly extends Fly {
       this.state = 'fly';
       this.updateAir(dt, env);
     }
-    // the wings follow the flight muscles wherever the fly is; standing, they stay folded until the muscles pull hard
-    this.wingCommand = { amp: clamp(this.power / 0.35, 0, 1), fold: this.perchBlend * (1 - smoothstep(0.08, 0.3, this.power)) };
+    // each wing and each haltere follows its own motor neurons wherever the fly is (see read)
+    const [left, right] = this.wingGoal;
+    this.wingCommand = { amp: (left.amp + right.amp) / 2, fold: (left.fold + right.fold) / 2, left, right };
+    this.haltereCommand = this.haltereGoal;
     this.applyPose(dt);
     this.poseBrain();
     this.lastVel.copy(this.vel);
@@ -293,20 +317,18 @@ export class BrainFly extends Fly {
       put(`${prefix}_R`, value);
     };
     both('pr', AMBIENT_LIGHT);
-    if (this.state === 'perch') {
-      for (const leg of 'fmh') {
-        both(`prop_leg_${leg}`, LEG_LOAD);
-        both(`touch_leg_${leg}`, LEG_TOUCH);
-      }
-    }
+    if (this.state === 'perch') this.senseLegs(put);
     if (this.state === 'fly') {
       both('jo_cef', clamp(this.vel.length() * 4.5, 0, 12)); // wind on the antennae
       both('haltere', clamp(this.omega.length() * HALTERE_PER_RAD, 0, 12)); // the body is spinning
     }
-    both('haltere', 9 * this.wingAmp * (1 - this.wingFold)); // the halteres feel the wingbeat
+    for (const [i, side] of ['L', 'R'].entries()) {
+      const wing = this.wingSide[i];
+      put(`haltere_${side}`, 9 * wing.amp * (1 - wing.fold)); // each haltere feels the beat of its own wing
+    }
     if (env.shake > 0.05) {
       both('haltere', 6 + 6 * Math.min(1, env.shake));
-      both('prop_leg_m', 6 + 5 * Math.min(1, env.shake));
+      for (const kind of LEG_SENSORS) both(`${kind}_leg_m`, 6 + 5 * Math.min(1, env.shake));
     }
     if (this.dust > 0.02) both('bm', DUST[0] + DUST[1] * this.dust);
     if (this.threat.strength > 0.02) put(`looming_${this.threat.side}`, 7.5 + 6 * this.threat.strength);
@@ -320,16 +342,62 @@ export class BrainFly extends Fly {
     this.link.update(drive, dt * 1000);
   }
 
+  /**
+   * What the standing legs report, from the state of each leg (Fly.poseLegs): load on the campaniform sensilla (a foot in
+   * the air carries none, fewer feet on the glass load each more), position and speed of the leg on the chordotonal organs,
+   * the ends of the range on the hair plates, contact on the bristles. A leg that stands at rest gives LEG_LOAD on every kind.
+   */
+  senseLegs(put) {
+    const legs = this.model.legs;
+    const share = Math.sqrt(6 / Math.max(legs.filter((leg) => leg.stepT >= 1).length, 1));
+    const half = (mV) => Math.round(mV * 2) / 2; // a drive that changes every frame costs a command to the brain every frame
+    for (const leg of legs) {
+      const at = `${'fmh'[leg.idx]}_${leg.side > 0 ? 'L' : 'R'}`;
+      const down = leg.stepT >= 1;
+      put(`cs_leg_${at}`, down ? half(LEG_LOAD * share) : 0);
+      put(`co_leg_${at}`, half(clamp(LEG_LOAD + CO_POSITION * Math.max(0, -leg.ext) + CO_SPEED * Math.min(Math.abs(leg.extV) / CO_SPEED_MAX, 1), 0, 15)));
+      put(`hp_leg_${at}`, half(LEG_LOAD + HP_RANGE * smoothstep(0.7, 1, Math.abs(leg.ext))));
+      put(`lg_leg_${at}`, LEG_LOAD);
+      put(`touch_leg_${at}`, down ? LEG_TOUCH : 0);
+    }
+  }
+
   /** Motor rates -> body commands. */
   read(dt) {
     const r = (name) => this.link.rate(name);
-    const wantedPower = clamp((this.link.both('mn_dlm') + this.link.both('mn_dvm')) / 2 / POWER_HZ, 0, 1.6);
-    // wing muscles and wing inertia: fast to spin up, slow to spin down
-    this.power += (wantedPower - this.power) * damp(wantedPower > this.power ? 14 : 0.9, dt);
-    // steering muscles: the side that is more active turns the fly away from it (sign convention)
+    // wing muscles and wing inertia: fast to spin up, slow to spin down; each wing has its own pair of power muscles
+    const SIDES = ['L', 'R'];
+    for (const [i, side] of SIDES.entries()) {
+      const wanted = clamp((r(`mn_dlm_${side}`) + r(`mn_dvm_${side}`)) / 2 / POWER_HZ, 0, 1.6);
+      this.powerSide[i] += (wanted - this.powerSide[i]) * damp(wanted > this.powerSide[i] ? 14 : 0.9, dt);
+    }
+    this.power = (this.powerSide[0] + this.powerSide[1]) / 2;
+
+    // steering: the steering muscles (the left-right bias of the network taken out), the haltere motor neurons, the neck
+    // and the descending neurons; an excess on the left is a turn to the left (sign convention). The haltere motor
+    // neurons change sign with the side of a threat (tools/explore/explore19.py), the steering muscles hardly do.
+    const wsL = r('mn_wsteer_L');
+    const wsR = r('mn_wsteer_R');
     const steerWanted =
-      (r('mn_wsteer_L') - r('mn_wsteer_R') + 0.6 * (r('mn_neck_L') - r('mn_neck_R')) + 0.4 * (r('dn_L') - r('dn_R'))) / 40;
+      (wsL - wsR - WSTEER_BIAS * (wsL + wsR) +
+        HALTERE_STEER * (r('mn_haltere_L') - r('mn_haltere_R')) +
+        0.6 * (r('mn_neck_L') - r('mn_neck_R')) +
+        0.4 * (r('dn_L') - r('dn_R'))) /
+      WSTEER_HZ;
     this.steer += (steerWanted - this.steer) * damp(10, dt);
+
+    // the wings: a stroke that follows its own power muscles, made smaller on the side of the turn and bigger on the other by
+    // the steering signal; a wing opens when its own motor neurons (mn_wing, all of one side) are active enough, or when
+    // its power muscles pull; the halteres beat with the wings and their own motor neurons make the stroke bigger
+    const asym = clamp(this.steer, -1, 1) * WING_ASYM;
+    for (const [i, side] of SIDES.entries()) {
+      const open = Math.max(smoothstep(0.08, 0.3, this.powerSide[i]), clamp((r(`mn_wing_${side}`) - WING_REST_HZ) / WING_OPEN_HZ, 0, 1));
+      const goal = this.wingGoal[i];
+      goal.amp = clamp(this.powerSide[i] / 0.35, 0, 1) * (1 + (i === 0 ? -asym : asym));
+      goal.fold = this.perchBlend * (1 - open);
+      const m = clamp(r(`mn_haltere_${side}`) / HALTERE_HZ, 0, 1);
+      this.haltereGoal[i] = Math.max(goal.amp * (1 - goal.fold) * (0.5 + 0.5 * m), 0.5 * m);
+    }
 
     // descending walking commands: DNp09 forward, MDN backward, DNa02 / DNa01 turn to their own side
     const walkWanted = clamp(this.link.both('dn_DNp09') / WALK_HZ, 0, 1) - clamp(r('dn_mdn') / BACK_HZ, 0, 1);
@@ -422,8 +490,10 @@ export class BrainFly extends Fly {
   updateAir(dt, env) {
     _up.copy(env.gravity).negate().normalize();
     const powered = smoothstep(0.08, 0.3, this.power);
-    // steering: rotate the heading about the up axis
-    this.heading.applyAxisAngle(_up, YAW_GAIN * this.steer * powered * dt);
+    // steering: the fly turns towards its weaker wing (with equal power muscles this is YAW_GAIN * steer)
+    const [left, right] = this.wingGoal;
+    const balance = (right.amp - left.amp) / Math.max(left.amp + right.amp, 0.3);
+    this.heading.applyAxisAngle(_up, (YAW_GAIN / WING_ASYM) * balance * powered * dt);
     this.heading.addScaledVector(_up, -this.heading.dot(_up)).normalize();
 
     const lift = this.lift;

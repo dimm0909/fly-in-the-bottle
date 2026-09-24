@@ -9,6 +9,8 @@ const TAU = Math.PI * 2;
 const UP = new V3(0, 1, 0);
 const AX_Y = new V3(0, 1, 0);
 const AX_Z = new V3(0, 0, 1);
+const HALTERE_STROKE = 0.9; // rad: how far a haltere swings each way at full amplitude
+const STRIDE = 0.06; // a foot may drift this far behind its standing spot before it steps: 1 unit of leg position
 
 export const rand = (a, b) => a + Math.random() * (b - a);
 const clamp = (x, a, b) => Math.min(Math.max(x, a), b);
@@ -29,6 +31,7 @@ const _goal = new V3();
 const _qy = new Quaternion();
 const _qz = new Quaternion();
 const _qf = new Quaternion();
+const _qh = new Quaternion();
 const IDENTITY = new Quaternion();
 
 // ---------------------------------------------------------------------------
@@ -102,8 +105,10 @@ export class Fly {
     this.dizzyT = 0;
     this.upsideDown = false;
 
-    this.wingAmp = 1;
+    this.wingAmp = 1; // mean of the two wings
     this.wingFold = 0;
+    this.wingSide = [{ amp: 1, fold: 0 }, { amp: 1, fold: 0 }]; // left, right
+    this.haltereAmp = [0, 0]; // 0..1
     this.flapPhase = 0;
 
     // Read by the audio engine.
@@ -565,24 +570,42 @@ export class Fly {
         amp = 0.85;
         break;
     }
-    if (this.wingCommand) ({ amp, fold } = this.wingCommand);
-    this.wingAmp += (amp - this.wingAmp) * damp(14, dt);
-    this.wingFold += (fold - this.wingFold) * damp(this.state === 'perch' ? 9 : 22, dt);
+    // one command for both wings, unless the subclass gives each wing its own ({ left: { amp, fold }, right: { … } })
+    const cmd = this.wingCommand;
+    if (cmd) ({ amp, fold } = cmd);
+    const goal = [cmd?.left ?? { amp, fold }, cmd?.right ?? { amp, fold }];
+    for (let i = 0; i < 2; i++) {
+      const w = this.wingSide[i];
+      w.amp += (goal[i].amp - w.amp) * damp(14, dt);
+      w.fold += (goal[i].fold - w.fold) * damp(this.state === 'perch' ? 9 : 22, dt);
+    }
+    this.wingAmp = (this.wingSide[0].amp + this.wingSide[1].amp) / 2;
+    this.wingFold = (this.wingSide[0].fold + this.wingSide[1].fold) / 2;
     this.flapPhase += dt * TAU * (11.3 + (this.state === 'scared' ? 2.5 : 0));
 
     // Stroke: the tip sweeps back and forth (positive = backwards) while heaving up and down.
-    const drive = this.wingAmp * (1 - this.wingFold);
     const sin = Math.sin(this.flapPhase);
     const cos = Math.cos(this.flapPhase);
-    const blur = this.wingAmp > 0.08;
     for (const w of this.model.wings) {
-      w.node.visible = w.ghost === 0 || blur;
+      const side = this.wingSide[w.side > 0 ? 0 : 1];
+      const drive = side.amp * (1 - side.fold);
+      w.node.visible = w.ghost === 0 || side.amp > 0.08;
       const sweep = drive * (0.35 + 0.85 * sin + w.ghost);
       const heave = drive * 0.32 * cos;
-      _qf.copy(IDENTITY).slerp(w.fold, this.wingFold); // spread -> folded over the back
+      _qf.copy(IDENTITY).slerp(w.fold, side.fold); // spread -> folded over the back
       _qy.setFromAxisAngle(AX_Y, w.side * sweep);
       _qz.setFromAxisAngle(AX_Z, w.side * heave);
       w.node.quaternion.copy(_qz).multiply(_qy).multiply(_qf).multiply(w.spread);
+    }
+
+    // The halteres beat against the wings while they beat; a subclass may set each one's amplitude (`haltereCommand`).
+    for (const h of this.model.halteres) {
+      const i = h.side > 0 ? 0 : 1;
+      const wing = this.wingSide[i];
+      const target = this.haltereCommand ? this.haltereCommand[i] : 0.8 * wing.amp * (1 - wing.fold);
+      this.haltereAmp[i] += (target - this.haltereAmp[i]) * damp(14, dt);
+      const swing = this.haltereAmp[i] * HALTERE_STROKE * Math.sin(this.flapPhase + Math.PI);
+      h.node.quaternion.copy(_qh.setFromAxisAngle(AX_Z, h.side * swing)).multiply(h.rest);
     }
   }
 
@@ -640,6 +663,11 @@ export class Fly {
       }
 
       solveLeg(leg, _goal);
+
+      // where the foot is in its range and how fast it moves: what the leg's own sensors would report (BrainFly.sense)
+      const ext = (leg.foot.z - leg.home.z) / STRIDE;
+      leg.extV += ((ext - leg.ext) / Math.max(dt, 1e-3) - leg.extV) * damp(20, dt);
+      leg.ext = ext;
     }
   }
 

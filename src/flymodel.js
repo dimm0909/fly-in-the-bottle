@@ -217,6 +217,8 @@ export function buildFlyModel({ rig, blob }) {
         home: foot.clone(), // FlyBody's rest pose is a standing pose: the claws are on the ground
         tuck: new V3(foot.x * 0.5, foot.y * 0.55, foot.z * 0.75), // in flight the legs hang tucked under the body
         twitch: new V3(), // brain-driven offset of the foot target, body space
+        ext: 0, // foot position along the body relative to its standing spot, in strides (+ forward); set by Fly.poseLegs
+        extV: 0, // and its speed, strides per second
         planted: new V3(),
         stepFrom: new V3(),
         stepTo: new V3(),

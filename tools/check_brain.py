@@ -53,7 +53,8 @@ check('response grows with stimulus strength', levels[0] <= levels[1] + 5 <= lev
 
 # walking commands: a small object on the right steers to the right and walks the fly forward, without a take-off;
 # the drive is what BrainFly.sense() gives an object of strength ~0.8 (OBJECT_STEER, OBJECT_WALK in src/brainfly.js)
-REST = {'pr_L': 8, 'pr_R': 8} | {f'{k}_{l}_{s}': v for k, v in (('prop_leg', 7), ('touch_leg', 5)) for l in 'fmh' for s in 'LR'}
+KINDS = ['cs', 'co', 'hp', 'lg']  # campaniform sensilla, chordotonal organs, hair plates, the rest of the leg proprioceptors
+REST = {'pr_L': 8, 'pr_R': 8} | {f'{k}_leg_{l}_{s}': 7 for k in KINDS for l in 'fmh' for s in 'LR'} | {f'touch_leg_{l}_{s}': 5 for l in 'fmh' for s in 'LR'}
 def settled():
     b.clear(); b.reset()
     for g, v in REST.items():
@@ -85,5 +86,38 @@ b.drive('bm_L', 12); b.drive('bm_R', 12)
 r = b.rates(400)
 check('head bristles on both sides drive grooming (aDN1, aDN2)', r['dn_groom'] > 20, f"(aDN {r['dn_groom']:.0f} Hz)")
 check('grooming is not a take-off', max(r[f'mn_{m}_{s}'] for m in ('dlm', 'dvm') for s in 'LR') < 60, f"(dlm {r['mn_dlm_L']:.0f} dvm {r['mn_dvm_L']:.0f} Hz)")
+
+# legs in the loop (BrainFly.senseLegs): the leg proprioceptors, raised to what a stepping leg can report or silenced as on
+# a foot in the air, change the leg motor pools by a few Hz and wake nothing else (no rhythm, no take-off, no grooming)
+settled()
+for leg in 'fmh':
+    for side in 'LR':
+        for k in KINDS:
+            b.drive(f'{k}_leg_{leg}_{side}', 15)
+r = b.rates(500)
+check('raised leg proprioceptors do not wake the fly', max(r['mn_dlm_L'], r['mn_dlm_R']) < 5 and r['dn_groom'] < 5 and r['dn_mdn'] < 10 and max(r[f'mn_leg_{l}_sw_{s}'] for l in 'fmh' for s in 'LR') < 15,
+      f"(dlm {r['mn_dlm_L']:.0f}, groom {r['dn_groom']:.0f}, MDN {r['dn_mdn']:.0f}, swing pools up to {max(r[f'mn_leg_{l}_sw_{s}'] for l in 'fmh' for s in 'LR'):.0f} Hz)")
+settled()
+for leg in 'fmh':
+    for side in 'LR':
+        for k in KINDS:
+            b.drive(f'{k}_leg_{leg}_{side}', 0)
+r = b.rates(500)
+check('legs off the glass keep the network silent', sum(r[f'mn_leg_{l}_{t}_{s}'] for l in 'fmh' for t in ('sw', 'st') for s in 'LR') < 1 and r['mn_dlm_L'] < 1, f"(dlm {r['mn_dlm_L']:.1f} Hz)")
+
+# wings and halteres by side (BrainFly.read): a deflected wing answers on its own side; the haltere motor neurons carry the
+# side of a threat
+settled()
+b.drive('prop_wing_L', 12)
+b.advance(50)
+r = b.rates(400)
+check('a deflected wing opens on its side (mn_wing)', r['mn_wing_L'] > 8 and r['mn_wing_L'] > 2 * r['mn_wing_R'], f"(mn_wing L/R {r['mn_wing_L']:.0f}/{r['mn_wing_R']:.0f} Hz)")
+diff = {}
+for side in 'RL':
+    settled()
+    b.drive(f'looming_{side}', 12)
+    r = b.rates(100)
+    diff[side] = r['mn_haltere_L'] - r['mn_haltere_R']
+check('haltere motor neurons follow the side of a threat', diff['R'] > 3 and diff['L'] < -3, f"(left minus right for a threat on the right {diff['R']:+.1f}, on the left {diff['L']:+.1f} Hz)")
 b.close()
 sys.exit(1 if failures else 0)

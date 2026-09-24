@@ -38,7 +38,7 @@ tools/
   brain_client.py           # Python-клиент сайдкара для исследований и тестов
   check_brain.py            # проверки сайдкара (npm run brain:check)
   bench_brain.py            # замер стоимости счёта
-  explore/                  # эксперименты калибровки (explore1.py ... explore15.py)
+  explore/                  # эксперименты калибровки (explore1.py ... explore19.py)
 docs/                       # эта документация (Sphinx)
 data/                       # git-ignored: данные MaleCNS, граф, бинарник мозга, клон FlyBody
 shots/                      # git-ignored: кадры режима --shot
@@ -53,7 +53,7 @@ shots/                      # git-ignored: кадры режима --shot
 ### Мозг
 
 ```bash
-npm run brain:check                       # контроль поведения сайдкара (19 проверок)
+npm run brain:check                       # контроль поведения сайдкара (23 проверки)
 .venv/bin/python tools/bench_brain.py     # стоимость счёта в нескольких режимах (Windows: node tools/dev.js py tools/bench_brain.py)
 ```
 

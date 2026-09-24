@@ -50,6 +50,10 @@ proprio = n.subclass.isin(['chordotonal organ', 'campaniform sensilla', 'hair pl
 for leg, nerves in leg_nerve.items():
     sided(f'touch_leg_{leg}', vs & bristle & n.entryNerve.isin(nerves), 'rootSide')
     sided(f'prop_leg_{leg}', vs & proprio & n.entryNerve.isin(nerves), 'rootSide')
+    # the same proprioceptors by kind: load (campaniform sensilla), joint position and speed (chordotonal organs), the
+    # ends of the joint range (hair plates), and the rest ('leg'); BrainFly drives these from the state of each leg
+    for kind, sub in {'cs': 'campaniform sensilla', 'co': 'chordotonal organ', 'hp': 'hair plate', 'lg': 'leg'}.items():
+        sided(f'{kind}_leg_{leg}', vs & (n.subclass == sub) & n.entryNerve.isin(nerves), 'rootSide')
 sided('touch_wing', vs & (n.subclass.isin(['wing bristle', 'wing']) | (bristle & (n.entryNerve == 'ADMN'))), 'rootSide')
 sided('prop_wing', vs & (n.subclass == 'campaniform sensilla') & (n.entryNerve == 'ADMN'), 'rootSide')
 sided('touch_notum', vs & ((n.subclass == 'notum') | (bristle & (n.entryNerve == 'PDMN'))), 'rootSide')
