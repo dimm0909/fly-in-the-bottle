@@ -1,0 +1,20 @@
+{
+  "name": "fly-in-the-bottle",
+  "version": "0.1.0",
+  "description": "Desktop widget: a fly in a glass jar that you can poke",
+  "main": "main.js",
+  "private": true,
+  "scripts": {
+    "start": "electron . --no-sandbox",
+    "shot": "electron . --no-sandbox --shot",
+    "brain:setup": "bash tools/setup_brain.sh",
+    "brain:check": ".venv/bin/python tools/check_brain.py",
+    "start:scripted": "electron . --no-sandbox --no-brain"
+  },
+  "devDependencies": {
+    "electron": "^41.7.1"
+  },
+  "dependencies": {
+    "three": "^0.186.0"
+  }
+}
