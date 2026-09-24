@@ -3,7 +3,7 @@ import pandas as pd
 sys.path.insert(0, 'tools')
 from brain_client import Brain
 n = pd.read_feather('data/brain/neurons.feather')
-b = Brain(); b.param('w_syn', 0.15)
+b = Brain(); b.param('w_syn', 0.15); b.param('dt', 0.5); b.param('adapt', 0)  # settings of the original experiment
 b.clear(); b.reset()
 b.drive('pr_L', 9); b.drive('pr_R', 9); b.advance(300)
 b.drive('looming_R', 12); b.advance(200); b.drive('looming_R', 0); b.advance(500)

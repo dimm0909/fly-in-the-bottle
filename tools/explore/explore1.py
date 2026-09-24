@@ -2,6 +2,7 @@ import sys, time
 sys.path.insert(0, 'tools')
 from brain_client import Brain, show
 b = Brain()
+b.param('dt', 0.5); b.param('w_syn', 0.275); b.param('adapt', 0); b.param('tau_adapt', 1000)  # settings of the original experiment
 print('backend', b.backend, b.n, 'neurons', b.e, 'edges')
 print('idle 300ms:', show(b.rates(300)) or '(silent)')
 # ambient light on both eyes

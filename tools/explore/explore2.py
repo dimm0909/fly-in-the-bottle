@@ -3,6 +3,7 @@ sys.path.insert(0, 'tools')
 from brain_client import Brain
 
 b = Brain()
+b.param('dt', 0.5); b.param('w_syn', 0.275); b.param('adapt', 0); b.param('tau_adapt', 1000)  # settings of the original experiment
 KEYS = ['mn_dlm', 'mn_dvm', 'mn_wsteer', 'mn_wing', 'mn_haltere', 'mn_neck', 'mn_abd', 'mn_prob',
         'mn_leg_f_sw', 'mn_leg_f_st', 'mn_leg_m_sw', 'mn_leg_m_st', 'mn_leg_h_sw', 'mn_leg_h_st']
 

@@ -2,6 +2,7 @@ import sys
 sys.path.insert(0, 'tools')
 from brain_client import Brain
 b = Brain()
+b.param('dt', 1.0); b.param('w_syn', 0.15); b.param('adapt', 0.10); b.param('tau_adapt', 1500)  # the shipped configuration, stated explicitly
 rest = {'pr_L': 9, 'pr_R': 9} | {f'{k}_{l}_{s}': v for k, v in (('prop_leg', 8), ('touch_leg', 6)) for l in 'fmh' for s in 'LR'}
 noisy = ['bm', 'jo_ab', 'jo_cef', 'touch_notum', 'touch_wing', 'touch_abdomen', 'haltere', 'prop_wing'] + [f'touch_leg_{l}' for l in 'fmh']
 def run(rate, secs=24):

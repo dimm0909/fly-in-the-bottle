@@ -7,7 +7,8 @@
 //   clear                        remove all inputs
 //   advance <ms>                 -> "R <ms> <c0> <c1> ..."  spike counts per group, in `groups` order
 //   spikes                       -> "S <n> <id> ..."       neurons that fired in the last advance (capped)
-//   param <w_syn|w_ext|threshold|tau_m|tau_syn|delay|refractory> <value>
+//   param <dt|w_syn|w_ext|threshold|tau_m|tau_syn|delay|refractory|adapt|tau_adapt> <value>
+//   stats                        -> "T <total spikes>"
 //   reset | bench <ms> | quit
 #include <chrono>
 #include <cmath>

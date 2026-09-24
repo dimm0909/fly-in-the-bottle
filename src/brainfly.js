@@ -69,8 +69,11 @@ export function restingDrive() {
 }
 
 /**
- * Faint random input on the mechanosensors (air currents, vibration of the table): ~2 Hz per
- * neuron makes the resting brain twitch now and then, more and it never settles.
+ * Faint Poisson input (~2 Hz per neuron) on the mechanosensors, meant as air currents and table
+ * vibration. Measured (tools/explore/explore11.py): with the resting drive above, nothing happens up
+ * to ~30 Hz, and from ~40 Hz the network flips into sustained excitation and stays there, so there is
+ * no rate that makes the resting fly twitch now and then. At 2 Hz this is inert; the fly stays still
+ * until something touches it.
  */
 export function ambientNoise() {
   const groups = ['bm', 'jo_ab', 'jo_cef', 'touch_notum', 'touch_wing', 'touch_abdomen', 'haltere', 'prop_wing', 'touch_leg_f', 'touch_leg_m', 'touch_leg_h'];

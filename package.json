@@ -9,7 +9,8 @@
     "shot": "electron . --no-sandbox --shot",
     "brain:setup": "bash tools/setup_brain.sh",
     "brain:check": ".venv/bin/python tools/check_brain.py",
-    "start:scripted": "electron . --no-sandbox --no-brain"
+    "start:scripted": "electron . --no-sandbox --no-brain",
+    "docs": "make -C docs html"
   },
   "devDependencies": {
     "electron": "^41.7.1"

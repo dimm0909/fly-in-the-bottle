@@ -2,6 +2,7 @@ import sys
 sys.path.insert(0, 'tools')
 from brain_client import Brain
 b = Brain()
+b.param('dt', 0.5); b.param('adapt', 0)  # settings of the original experiment (w_syn is set below)
 light = {'pr_L': 9, 'pr_R': 9}
 def run(drives, settle=250, measure=400):
     b.clear(); b.reset()

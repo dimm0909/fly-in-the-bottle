@@ -8,7 +8,7 @@ standing = light | legs('prop_leg', 8) | legs('touch_leg', 6)
 airborne = light | both('jo_cef', 10) | both('haltere', 9)
 airborne2 = light | both('jo_cef', 12) | both('haltere', 11) | both('prop_wing', 9)
 def experiment(label, adapt, tau, ctx_before, ctx_after, pulse=12):
-    b = Brain(); b.param('w_syn', 0.15); b.param('adapt', adapt); b.param('tau_adapt', tau)
+    b = Brain(); b.param('dt', 0.5); b.param('w_syn', 0.15); b.param('adapt', adapt); b.param('tau_adapt', tau)
     for g, v in ctx_before.items(): b.drive(g, v)
     b.advance(400)
     b.drive('looming_R', pulse); r1 = b.rates(150); b.drive('looming_R', 0)

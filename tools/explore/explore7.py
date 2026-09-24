@@ -3,7 +3,7 @@ sys.path.insert(0, 'tools')
 from brain_client import Brain
 light = {'pr_L': 9, 'pr_R': 9}
 def experiment(label, w=0.15, cut=False, adapt=0.0, tau=1000.0, drive=12):
-    b = Brain(); b.param('w_syn', w); b.param('adapt', adapt); b.param('tau_adapt', tau)
+    b = Brain(); b.param('dt', 0.5); b.param('w_syn', w); b.param('adapt', adapt); b.param('tau_adapt', tau)
     if cut: b.cutout('mn_all')
     for g, v in light.items(): b.drive(g, v)
     b.advance(300)
