@@ -10,7 +10,7 @@ const UP = new V3(0, 1, 0);
 const AX_Y = new V3(0, 1, 0);
 const AX_Z = new V3(0, 0, 1);
 
-const rand = (a, b) => a + Math.random() * (b - a);
+export const rand = (a, b) => a + Math.random() * (b - a);
 const clamp = (x, a, b) => Math.min(Math.max(x, a), b);
 const damp = (rate, dt) => 1 - Math.exp(-rate * dt);
 
@@ -52,7 +52,7 @@ function basisQuat(out, fwd, up) {
   return out.setFromRotationMatrix(_m);
 }
 
-const randomUnit = (out = new V3()) => {
+export const randomUnit = (out = new V3()) => {
   out.set(rand(-1, 1), rand(-1, 1), rand(-1, 1));
   if (out.lengthSq() < 1e-4) out.set(0, 1, 0);
   return out.normalize();
@@ -96,6 +96,7 @@ export class Fly {
     this.turnRate = 0;
     this.perchBlend = 0;
     this.cleanBlend = 0;
+    this.stepLead = 0.03; // how far ahead of its standing spot a stepping foot is put (negative: walking backwards)
 
     this.tumbleMin = 0;
     this.dizzyT = 0;
@@ -527,7 +528,7 @@ export class Fly {
       _b.crossVectors(UP, this.heading).normalize();
       this.bank += (clamp(-_a.dot(_b) * 0.05, -0.65, 0.65) - this.bank) * damp(8, dt);
       _q.multiply(_qi.setFromAxisAngle(_c.set(0, 0, 1), this.bank));
-      this.quat.slerp(_q, damp(state === 'scared' ? 26 : 13, dt));
+      this.holdAttitude(dt, _q);
     }
 
     m.root.position.copy(this.pos);
@@ -541,6 +542,11 @@ export class Fly {
     this.poseWings(dt);
     this.poseLegs(dt);
     this.updateBuzz();
+  }
+
+  /** Turn the body towards the flight attitude `target` (a subclass may let it tumble instead). */
+  holdAttitude(dt, target) {
+    this.quat.slerp(target, damp(this.state === 'scared' ? 26 : 13, dt));
   }
 
   poseWings(dt) {
@@ -603,7 +609,7 @@ export class Fly {
         leg.planted.addScaledVector(this.perchN, Math.sin(Math.PI * t) * 0.035);
       } else if (leg.planted.distanceTo(_a) > 0.06 && !stepping[1 - leg.group] && this.state === 'perch') {
         leg.stepFrom.copy(leg.planted);
-        leg.stepTo.copy(_a).addScaledVector(_b.copy(this.perchFwd), 0.03);
+        leg.stepTo.copy(_a).addScaledVector(_b.copy(this.perchFwd), this.stepLead);
         leg.stepT = 0;
         stepping[leg.group] = true;
       }

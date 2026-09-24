@@ -21,9 +21,11 @@ struct Params {
   float w_ext = 1.5f;        // mV per external Poisson event
   float delay = 2.0f;        // ms
   float refractory = 2.0f;   // ms
-  float adapt = 0.10f;       // mV added to a neuron's threshold per spike (spike-frequency adaptation);
-                             // without it recurrent loops in the VNC never switch off
-  float tau_adapt = 1500.0f; // ms
+  float adapt = 0.20f;       // mV added to a neuron's threshold per spike (spike-frequency adaptation);
+                             // without it recurrent loops in the VNC never switch off. 0.10 mV / 1.5 s stopped the
+                             // flight muscles but left the rest of the network smouldering for minutes after a
+                             // leg touch (tools/explore/explore15.py); 0.20 mV / 3 s lets it fall silent
+  float tau_adapt = 3000.0f; // ms
 };
 
 struct Graph {  // CSR by presynaptic neuron

@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { createStudioEnvironment } from './env.js';
 import { createJar } from './jar.js';
 import { INNER_LAYER } from './fly.js';
-import { BrainFly, restingDrive, ambientNoise } from './brainfly.js';
+import { BrainFly, restingDrive } from './brainfly.js';
 import { BrainLink } from './brainlink.js';
 import { loadFlyAssets } from './flymodel.js';
 import { JarMotion } from './motion.js';
@@ -44,7 +44,7 @@ scene.add(key, fill);
 const jar = createJar();
 // The connectome brain is optional: without it the fly falls back to its scripted behaviour.
 const link = new BrainLink();
-await link.init(restingDrive(), ambientNoise());
+await link.init(restingDrive());
 const fly = new BrainFly(await loadFlyAssets(), link);
 jar.inner.add(fly.object);
 scene.add(jar.root, jar.shadow);
@@ -82,7 +82,7 @@ const sound = new Sound();
 window.widget.getSettings().then((s) => sound.setEnabled(s.sound));
 window.widget.onSettings(async (s) => {
   sound.setEnabled(s.sound);
-  if (s.brain?.running && !link.ready) await link.init(restingDrive(), ambientNoise());
+  if (s.brain?.running && !link.ready) await link.init(restingDrive());
   else if (!s.brain?.running) link.stop();
 });
 
@@ -166,21 +166,35 @@ function tapGlass(hit) {
   fly.startle(toInnerLocal(hit.point), 2.4);
 }
 
-const pointer = { x: 0, y: 0, inside: false, prevDist: null };
+const pointer = { x: 0, y: 0, inside: false, prevDist: null, lastX: 0, lastY: 0, speed: 0, closing: 0 }; // px/s, smoothed
 const flyScreen = new THREE.Vector3();
 const plane = new THREE.Plane();
 const planePoint = new THREE.Vector3();
 const camDir = new THREE.Vector3();
 
+/** Which side of the fly is the pointer on? Intersect the pointer ray with a plane through the fly. */
+function pointerSide(wx, wy, wz) {
+  const rect = canvas.getBoundingClientRect();
+  ndc.set((pointer.x / rect.width) * 2 - 1, -(pointer.y / rect.height) * 2 + 1);
+  raycaster.setFromCamera(ndc, camera);
+  camera.getWorldDirection(camDir);
+  plane.setFromNormalAndCoplanarPoint(camDir, scratch.set(wx, wy, wz));
+  if (!raycaster.ray.intersectPlane(plane, planePoint)) return null;
+  return fly.object.worldToLocal(planePoint.clone()).x > 0 ? 'L' : 'R';
+}
+
 /**
- * The retina sees an object that approaches as an expanding blob: the rate of change of its
- * distance, relative to the distance, drives the looming neurons on that side of the fly.
+ * What the pointer looks like to the fly's eyes. An object that approaches is an expanding blob: the rate of change
+ * of its distance, relative to the distance, drives the looming neurons on that side of the fly. An object that moves
+ * across the field of view (LC9 and LC10d, see BrainFly.seeObject) is as strong as it is fast and near; it does not
+ * have to come closer, and it does not have to be a threat.
  */
 function updateThreat(dt) {
   const threat = fly.threat;
   threat.strength *= Math.exp(-dt / 0.25);
   if (!pointer.inside) {
     pointer.prevDist = null;
+    pointer.speed = pointer.closing = 0;
     return;
   }
   const rect = canvas.getBoundingClientRect();
@@ -190,22 +204,30 @@ function updateThreat(dt) {
   const fx = ((flyScreen.x + 1) / 2) * rect.width;
   const fy = ((1 - flyScreen.y) / 2) * rect.height;
   const dist = Math.hypot(pointer.x - fx, pointer.y - fy);
+  const moved = pointer.prevDist == null ? 0 : Math.hypot(pointer.x - pointer.lastX, pointer.y - pointer.lastY) / Math.max(dt, 1e-3);
+  pointer.speed += (moved - pointer.speed) * (1 - Math.exp(-dt / 0.08));
+  pointer.lastX = pointer.x;
+  pointer.lastY = pointer.y;
+  // the mouse reports in bursts, so a single frame says little about how fast the pointer is coming
+  const closing = pointer.prevDist == null ? 0 : (pointer.prevDist - dist) / Math.max(dt, 1e-3);
+  pointer.closing += (closing - pointer.closing) * (1 - Math.exp(-dt / 0.06));
   if (pointer.prevDist != null && dist < 280) {
-    const closing = (pointer.prevDist - dist) / Math.max(dt, 1e-3);
-    const strength = clamp((closing / (dist + 60)) * 0.5, 0, 1);
+    // a slow drift towards the fly is not an attack: the loom detectors need the blob to expand quickly
+    const strength = clamp(0.5 * (pointer.closing / (dist + 60) - 0.8), 0, 1);
     if (strength > threat.strength) {
       threat.strength = strength;
-      // which side of the fly is the object on? intersect the pointer ray with a plane through the fly
-      ndc.set((pointer.x / rect.width) * 2 - 1, -(pointer.y / rect.height) * 2 + 1);
-      raycaster.setFromCamera(ndc, camera);
-      camera.getWorldDirection(camDir);
-      plane.setFromNormalAndCoplanarPoint(camDir, scratch.set(wx, wy, wz));
-      if (raycaster.ray.intersectPlane(plane, planePoint)) {
-        threat.side = fly.object.worldToLocal(planePoint.clone()).x > 0 ? 'L' : 'R';
-      }
+      threat.side = pointerSide(wx, wy, wz) ?? threat.side;
     }
   }
   pointer.prevDist = dist;
+  // a pointer that drags the jar is a hand on the glass, not something moving about in the fly's view
+  if (!drag && fly.seeObject) {
+    const strength = clamp((pointer.speed / 900) * (260 / (dist + 130)), 0, 1);
+    if (strength > 0.05) {
+      const side = pointerSide(wx, wy, wz);
+      if (side) fly.seeObject(strength, side);
+    }
+  }
 }
 
 let drag = null;

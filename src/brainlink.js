@@ -16,7 +16,7 @@ export class BrainLink {
   }
 
   /** `resting` is the drive of a fly standing quietly; the network is settled in it before use. */
-  async init(resting = {}, noise = null) {
+  async init(resting = {}) {
     const info = await window.widget.brainInfo();
     if (!info) return false;
     this.sizes = info.sizes;
@@ -24,7 +24,6 @@ export class BrainLink {
     this.connections = info.connections;
     // Switching every sensory group on at once from silence makes a violent transient that a real
     // fly never has: let the network settle first (a couple of simulated seconds).
-    if (noise) await window.widget.brainNoise(noise.groups, noise.rate);
     await window.widget.brainStep(resting, 2500);
     await window.widget.brainStep(resting, 500);
     this.rates = {};

@@ -58,6 +58,11 @@ sided('haltere', vs & ((n.subclass == 'haltere') | ((n.subclass == 'campaniform 
 
 vp = n.superclass == 'visual_projection'
 sided('looming', vp & n.type.isin(['LPLC2', 'LC4', 'LC6', 'LC16', 'LPLC1']), 'somaSide')
+# a small object moving in the visual field (explore12.py, explore14.py): LC9 -> DNp09 (forward walking), LC10d -> DNa02 on
+# the same side (steering). Other LC10 types were tried while the network still smouldered after a touch (LC10a noisy on the
+# left, LC10b silent, LC10e weak, LC10c + LC10d together woke the flight network on the left); the choice was not revisited.
+sided('lc9', vp & (n.type == 'LC9'), 'somaSide')
+sided('lc10d', vp & (n.type == 'LC10d'), 'somaSide')
 
 # ---- motor read-outs ---------------------------------------------------------------------
 mn = n.superclass.isin(['vnc_motor', 'cb_motor'])
@@ -73,6 +78,7 @@ sided('mn_wing', wm, 'somaSide')
 sided('mn_dlm', wm & n.type.str.startswith('DLMn'), 'somaSide')            # dorsal longitudinal: flight power
 sided('mn_dvm', wm & n.type.str.startswith('DVMn'), 'somaSide')            # dorso-ventral: flight power
 sided('mn_wsteer', wm & n.type.str.match(r'^(b\d|i\d|iii\d|hg\d|ps\d|tp\d|tpn)'), 'somaSide')  # steering muscles
+sided('mn_ttm', wm & (n.type == 'TTMn'), 'somaSide')                    # tergotrochanteral muscle (one per side): the jump
 sided('mn_haltere', (n.superclass == 'vnc_motor') & (n.subclass == 'hm'), 'somaSide')
 sided('mn_neck', mn & (n.subclass == 'nm'), 'somaSide')
 sided('mn_abd', (n.superclass == 'vnc_motor') & (n.subclass == 'ad'), 'somaSide')
@@ -86,6 +92,10 @@ sided('dn', dn, 'somaSide')
 sided('dn_gf', dn & (n.type == 'DNp01'), 'somaSide')                       # giant fibres: escape take-off
 for t in ['DNa01', 'DNa02', 'DNg100', 'DNp02', 'DNp03', 'DNp06', 'DNp07', 'DNp09', 'DNp10', 'DNp11', 'DNb01']:
     sided(f'dn_{t}', dn & (n.type == t), 'somaSide')
+# antennal grooming: the annotations name DNg62 and DNge078 as Hampel 2015 aDN1 / aDN2 (one neuron per side each)
+sided('dn_DNg62', dn & (n.type == 'DNg62'), 'somaSide')
+sided('dn_DNge078', dn & (n.type == 'DNge078'), 'somaSide')
+add('dn_groom', dn & n.type.isin(['DNg62', 'DNge078']))
 add('dn_mdn', dn & (n.type == 'MDN'))                                       # moonwalker: backward walking
 add('dn_pip1', dn & (n.type == 'pIP1'))
 

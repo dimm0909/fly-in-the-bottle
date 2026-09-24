@@ -1,10 +1,10 @@
 """Sweep the global synaptic gain (w_syn) and see how specific the responses are.
 
   python tools/explore/explore3.py            # the original experiment: dt 0.5 ms, no adaptation
-  python tools/explore/explore3.py --final    # shipped configuration: dt 1 ms, adaptation 0.1 mV / 1.5 s
+  python tools/explore/explore3.py --final    # shipped configuration: dt 1 ms, adaptation 0.20 mV / 3 s
 
-Prints the raw rates and, at the end, a markdown table of the DLM (flight muscle) rate per
-stimulus and gain, which is what docs/brain_model.md quotes. Numbers near w_syn = 0.15 are
+Prints the raw rates and, at the end, two markdown tables of the DLM (flight muscle) rate per
+stimulus and gain (250-650 ms after the onset, and the first 150 ms), which is what docs/brain_model.md quotes. Numbers near w_syn = 0.15 are
 sensitive to small changes of the model (this is a near-critical regime), so quote a run, not a
 memory.
 """
@@ -16,7 +16,7 @@ from brain_client import Brain
 final = '--final' in sys.argv
 b = Brain()
 if final:
-    b.param('dt', 1.0); b.param('adapt', 0.10); b.param('tau_adapt', 1500)
+    b.param('dt', 1.0); b.param('adapt', 0.20); b.param('tau_adapt', 3000)
 else:
     b.param('dt', 0.5); b.param('adapt', 0)
 
@@ -50,18 +50,24 @@ def line(r):
 
 
 print(f'w_syn sweep ({"shipped configuration" if final else "original experiment"}); columns = mean of L/R rates (Hz)')
-dlm, abd = {}, {}
+dlm, abd, burst = {}, {}, {}
 for w in GAINS:
     b.param('w_syn', w)
     print(f'--- w_syn = {w}')
     for name, drives in STIMULI.items():
         r = run(drives)
         dlm[(name, w)], abd[(name, w)] = mean(r, 'mn_dlm'), mean(r, 'mn_abd')
+        burst[(name, w)] = mean(run(drives, settle=0, measure=150), 'mn_dlm')  # the first 150 ms: the burst itself
         print(f'  {name:18s}', line(r))
 
 print('\n| Стимул (12 мВ) | ' + ' | '.join(str(w).replace('.', ',') for w in GAINS) + ' |')
 print('| --- |' + ' --- |' * len(GAINS))
 for name in STIMULI:
     print(f'| {name} | ' + ' | '.join(f'{dlm[(name, w)]:.0f}' for w in GAINS) + ' |')
+print('\nthe same in the first 150 ms after the onset (the burst)')
+print('| Стимул (12 мВ) | ' + ' | '.join(str(w).replace('.', ',') for w in GAINS) + ' |')
+print('| --- |' + ' --- |' * len(GAINS))
+for name in STIMULI:
+    print(f'| {name} | ' + ' | '.join(f'{burst[(name, w)]:.0f}' for w in GAINS) + ' |')
 print('\nabdominal motor neurons for "touch abdomen 12":', ', '.join(f'{w}: {abd[("touch abdomen 12", w)]:.0f}' for w in GAINS))
 b.close()

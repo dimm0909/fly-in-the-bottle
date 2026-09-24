@@ -3,7 +3,7 @@ sys.path.insert(0, 'tools')
 from brain_client import Brain
 light = {'pr_L': 9, 'pr_R': 9}
 def experiment(dt):
-    b = Brain(); b.param('dt', dt); b.param('w_syn', 0.15); b.param('adapt', 0.1); b.param('tau_adapt', 1500)
+    b = Brain(); b.param('dt', dt); b.param('w_syn', 0.15); b.param('adapt', 0.1); b.param('tau_adapt', 1500)  # the configuration of that time (adaptation was raised later, see explore15.py)
     b.cutout('mn_all')
     for g, v in light.items(): b.drive(g, v)
     t = time.time(); b.advance(400); wall = time.time() - t

@@ -36,8 +36,8 @@
 | `src/jar.js` | `createJar`, `JAR`, `outerRadiusAt`, `innerRadiusAt` | Банка, шейдер стекла, крышка, тень. |
 | `src/env.js` | `studioEnvGLSL`, `createStudioEnvironment` | Процедурное освещение для отражений. |
 | `src/flymodel.js` | `loadFlyAssets`, `buildFlyModel`, `solveLeg`, `MM`, `BODY_H`, `INNER_LAYER` | Тело мухи из мешей, скелет, IK ног. |
-| `src/fly.js` | `Fly` | Сценарная муха и общая механика: столкновения, поза, звук. |
-| `src/brainfly.js` | `BrainFly`, `touchGroups`, `restingDrive`, `ambientNoise` | Муха, управляемая мозгом. |
+| `src/fly.js` | `Fly`, `INNER_LAYER`, `rand`, `randomUnit` | Сценарная муха и общая механика: столкновения, поза, звук. |
+| `src/brainfly.js` | `BrainFly`, `touchGroups`, `restingDrive` | Муха, управляемая мозгом. |
 | `src/brainlink.js` | `BrainLink` | Асинхронная связь рендерера с сайдкаром. |
 | `src/motion.js` | `JarMotion` | Качание, вращение и встряска банки. |
 | `src/audio.js` | `Sound` | Синтез звука. |

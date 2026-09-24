@@ -4,7 +4,7 @@
 
 A "burst" is a second in which the summed rate of neck, leg, abdominal-flex and flight-muscle motor
 neurons exceeds a threshold after at least 3 quiet seconds; a run that never calms down again is
-reported as "restless". The noise groups are those of BrainFly.ambientNoise() (src/brainfly.js).
+reported as "restless". The noise groups are those of the former BrainFly.ambientNoise() (src/brainfly.js, removed: this experiment is why).
 """
 import sys
 
@@ -16,7 +16,7 @@ secs = int(sys.argv[2]) if len(sys.argv) > 2 else 240
 rest = {'pr_L': 8, 'pr_R': 8} | {f'{k}_{l}_{s}': v for k, v in (('prop_leg', 7), ('touch_leg', 5)) for l in 'fmh' for s in 'LR'}
 noisy = ['bm', 'jo_ab', 'jo_cef', 'touch_notum', 'touch_wing', 'touch_abdomen', 'haltere', 'prop_wing', 'touch_leg_f', 'touch_leg_m', 'touch_leg_h']
 b = Brain()
-b.param('dt', 1.0); b.param('w_syn', 0.15); b.param('adapt', 0.10); b.param('tau_adapt', 1500)  # the shipped configuration, stated explicitly
+b.param('dt', 1.0); b.param('w_syn', 0.15); b.param('adapt', 0.10); b.param('tau_adapt', 1500)  # the configuration of that time (adaptation was raised later, see explore15.py)
 for g, v in rest.items():
     b.drive(g, v)
 b.advance(3000)
