@@ -158,7 +158,7 @@ function glassMaterial(shared, { side, composite, reflect, baseAlpha, edgeAlpha 
 }
 
 // ---------------------------------------------------------------------------
-// Lid, label, shadow
+// Lid, shadow
 // ---------------------------------------------------------------------------
 
 function canvasTexture(width, height, draw, { srgb = true } = {}) {
@@ -204,40 +204,6 @@ function lidTopTexture() {
       g.arc(x, y, 13, 0, Math.PI * 2);
       g.fill();
     }
-  });
-}
-
-function labelTexture() {
-  return canvasTexture(1024, 560, (g, w, h) => {
-    g.fillStyle = '#efe4c6';
-    g.fillRect(0, 0, w, h);
-    // paper grain + soft vignette
-    for (let i = 0; i < 7000; i++) {
-      g.fillStyle = `rgba(120,95,50,${Math.random() * 0.05})`;
-      g.fillRect(Math.random() * w, Math.random() * h, 2, 2);
-    }
-    const v = g.createRadialGradient(w / 2, h / 2, h * 0.3, w / 2, h / 2, w * 0.62);
-    v.addColorStop(0, 'rgba(0,0,0,0)');
-    v.addColorStop(1, 'rgba(90,60,20,0.28)');
-    g.fillStyle = v;
-    g.fillRect(0, 0, w, h);
-
-    g.strokeStyle = '#8f2b1d';
-    g.lineWidth = 6;
-    g.strokeRect(24, 24, w - 48, h - 48);
-    g.lineWidth = 2;
-    g.strokeRect(40, 40, w - 80, h - 80);
-
-    g.fillStyle = '#8f2b1d';
-    g.textAlign = 'center';
-    g.textBaseline = 'middle';
-    g.font = 'bold 150px Georgia, "DejaVu Serif", serif';
-    g.fillText('МУХА', w / 2, h * 0.4);
-    g.font = 'italic 44px Georgia, "DejaVu Serif", serif';
-    g.fillStyle = '#5a4630';
-    g.fillText('обыкновенная, в банке', w / 2, h * 0.68);
-    g.font = '32px Georgia, "DejaVu Serif", serif';
-    g.fillText('№ 1  ·  не кормить  ·  не трясти', w / 2, h * 0.83);
   });
 }
 
@@ -305,7 +271,7 @@ function buildLid() {
 /**
  * Scene graph:
  *   root (tilt: pitch/roll, pivot on the base centre)
- *   ├─ spin (yaw) ── glass shells, lid, label
+ *   ├─ spin (yaw) ── glass shells, lid
  *   └─ inner ─────── everything living inside the jar (the fly), tilts but does not spin
  */
 export function createJar() {
@@ -343,15 +309,6 @@ export function createJar() {
   const lid = buildLid();
   spin.add(lid);
 
-  // A small sticker low on the jar: a big label would hide the fly half the time.
-  const labelArc = 1.25;
-  const label = new THREE.Mesh(
-    new THREE.CylinderGeometry(JAR.R + 0.014, JAR.R + 0.014, 0.66, 64, 1, true, -labelArc / 2, labelArc),
-    new THREE.MeshStandardMaterial({ map: labelTexture(), roughness: 0.82, metalness: 0, side: THREE.DoubleSide }),
-  );
-  label.position.y = 0.78;
-  spin.add(label);
-
   const shadow = new THREE.Mesh(
     new THREE.PlaneGeometry(3.6, 3.6).rotateX(-Math.PI / 2),
     new THREE.MeshBasicMaterial({ map: shadowTexture(), transparent: true, depthWrite: false, opacity: 0.55, toneMapped: false }),
@@ -363,7 +320,6 @@ export function createJar() {
     spin,
     inner,
     lid,
-    label,
     glassFront, // also the raycast target for "is the pointer on the jar"
     shadow,
     setInnerTexture(texture) {

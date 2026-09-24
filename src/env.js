@@ -3,7 +3,7 @@ import * as THREE from 'three';
 // A procedural "photo studio": soft sky, a mullioned window front-left, a tall
 // strip light on the right, a small overhead panel and a warm rim light behind.
 // The same GLSL is used by the glass shader (analytic reflections) and baked
-// into a PMREM texture for the standard materials (lid, label, fly), so every
+// into a PMREM texture for the standard materials (lid, fly), so every
 // surface reflects the same room.
 export const studioEnvGLSL = /* glsl */ `
 float rectMask(vec2 p, vec2 c, vec2 h, float s) {

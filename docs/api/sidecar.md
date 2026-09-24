@@ -1,7 +1,10 @@
 # Сайдкар мозга (C++)
 
-Каталог `brain/`. Собирается командой `make -C brain` (`g++ -O3 -march=native -ffast-math -std=c++17`) в
-`data/brain/brain`. Текстовый протокол описан в [brain_reference](../brain_reference.md); модель и внутреннее
+Каталог `brain/`. Собирается командой `npm run brain:compile` (`tools/dev.js compile-brain`) в `data/brain/brain`
+(на Windows `brain.exe`): по очереди пробуются `g++`, `c++`, `clang++` (`-O3 -ffast-math -std=c++17`, на Linux и с
+`-march=native`, на Windows со `-static`), на Windows затем MSVC (`cl /O2 /fp:fast /MT`), а если компилятора нет -
+`ziglang` из PyPI. На Linux работает и `make -C brain`. Код не привязан к платформе: только стандартная библиотека
+C++17 и `stdio`. Текстовый протокол описан в [brain_reference](../brain_reference.md); модель и внутреннее
 устройство - в [brain_model](../brain_model.md).
 
 ## brain.h
@@ -78,7 +81,9 @@ Little-endian.
 | … | `uint32[E]` | `col` |
 | … | `float32[E]` | `w` |
 
-Заголовок упакован (без выравнивания). Пишет `tools/build_brain_graph.py`.
+Заголовок упакован (без выравнивания): в `cpu.cpp` это структура `GraphHeader` под `#pragma pack(push, 1)` с
+`static_assert(sizeof(GraphHeader) == 20)`, поэтому размер и раскладка не зависят от компилятора (GCC, Clang, MSVC).
+Файл читается в бинарном режиме (`fopen(…, "rb")`). Пишет `tools/build_brain_graph.py`.
 
 ### `data/brain/groups.txt`
 

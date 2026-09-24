@@ -13,7 +13,7 @@ import { JAR, innerRadiusAt } from './jar.js';
 // There is no behaviour script: nothing here decides to fly, walk or groom. The only rules are
 // the physics of the body (lift needs wing power, feet stick to glass) and the gain constants.
 
-const { Vector3: V3, Quaternion } = THREE;
+const { Vector3: V3 } = THREE;
 const clamp = (x, a, b) => Math.min(Math.max(x, a), b);
 const damp = (rate, dt) => 1 - Math.exp(-rate * dt);
 const smoothstep = (a, b, x) => {
@@ -36,12 +36,11 @@ const TAKEOFF_POWER = 0.28;
 const V_MAX = 2.4; // cruise speed at full power, units/s
 const YAW_GAIN = 2.6; // rad/s per unit of steering signal
 const GRAVITY = 14;
-const AIR_CLEAR = 0.28; // body-centre distance to the glass while flying
+const AIR_CLEAR = 0.34; // body-centre distance to the glass while flying
 
 const _up = new V3();
 const _h = new V3();
 const _v = new V3();
-const _q = new Quaternion();
 
 /** Which sensory groups does a touch on this body part excite? */
 export function touchGroups(part, localX) {
@@ -51,8 +50,8 @@ export function touchGroups(part, localX) {
   if (/wing/.test(part)) return [`touch_wing_${side}`];
   if (/haltere/.test(part)) return [`haltere_${side}`];
   if (/abdomen/.test(part)) return [`touch_abdomen_${side}`];
-  if (/pedicel|funiculus|arista/.test(part)) return [`jo_ab_${side}`, `jo_cef_${side}`];
-  if (/head|eye|rostrum|haustellum/.test(part)) return [`bm_${side}`];
+  if (/antenna/.test(part)) return [`jo_ab_${side}`, `jo_cef_${side}`];
+  if (/head|rostrum|haustellum|labrum/.test(part)) return [`bm_${side}`];
   return [`touch_notum_${side}`]; // thorax
 }
 
@@ -92,11 +91,6 @@ export class BrainFly extends Fly {
     this.headPitch = 0;
     this.abdCurl = 0;
     this.proboscis = 0;
-    this.restQuats = {};
-    for (const name of ['c_abdomen12', 'c_abdomen3', 'c_abdomen4', 'c_abdomen5', 'c_abdomen6']) {
-      this.restQuats[name] = this.model.nodes[name].quaternion.clone();
-    }
-    this.rostrumRest = this.model.nodes.c_rostrum.position.clone();
     this.brainOn = false;
     // start on the floor, like a fly that has just settled
     this.beginStand('floor', new V3(0.15, 0, 0.3));
@@ -167,7 +161,7 @@ export class BrainFly extends Fly {
         this.updateAir(dt, env);
     }
     this.applyPose(dt);
-    this.poseBrain(dt);
+    this.poseBrain();
     this.lastVel.copy(this.vel);
   }
 
@@ -339,17 +333,11 @@ export class BrainFly extends Fly {
   }
 
   /** Head, abdomen and proboscis follow their motor pools. */
-  poseBrain(dt) {
+  poseBrain() {
     if (!this.useBrain) return;
     const m = this.model;
-    m.head.rotation.set(this.headPitch, this.headYaw, 0);
-    const curl = -0.55 * this.abdCurl;
-    for (const name of ['c_abdomen3', 'c_abdomen4', 'c_abdomen5', 'c_abdomen6']) {
-      _q.setFromAxisAngle(new V3(1, 0, 0), curl / 2);
-      m.nodes[name].quaternion.copy(this.restQuats[name]).multiply(_q);
-    }
-    m.nodes.c_rostrum.position.copy(this.rostrumRest);
-    m.nodes.c_rostrum.position.y -= 0.05 * this.proboscis;
-    m.nodes.c_rostrum.position.z += 0.02 * this.proboscis;
+    m.setHead(this.headPitch, this.headYaw);
+    m.bendAbdomen(-0.9 * this.abdCurl);
+    m.setProboscis(this.proboscis);
   }
 }

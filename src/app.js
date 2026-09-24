@@ -114,18 +114,17 @@ function pick(clientX, clientY) {
   camera.layers.set(MAIN_LAYER);
 
   const lid = raycaster.intersectObject(jar.lid, true)[0];
-  const label = raycaster.intersectObject(jar.label)[0];
   const glass = raycaster.intersectObject(jar.glassFront)[0];
-  if (!lid && !label && !glass) return null;
+  if (!lid && !glass) return null;
 
-  const blocker = Math.min(lid?.distance ?? Infinity, label?.distance ?? Infinity);
+  const blocker = lid?.distance ?? Infinity;
   fly.object.getWorldPosition(flySphere.center);
   flySphere.radius = fly.hitRadius;
   const flyHit = raycaster.ray.intersectSphere(flySphere, scratch) ? raycaster.ray.origin.distanceTo(scratch) : Infinity;
 
   if (glass && flyHit < blocker) return { kind: 'fly', point: glass.point.clone() };
   if (lid && (!glass || lid.distance <= glass.distance)) return { kind: 'lid', point: lid.point.clone() };
-  return { kind: 'glass', point: (label ?? glass ?? lid).point.clone() };
+  return { kind: 'glass', point: (glass ?? lid).point.clone() };
 }
 
 const toInnerLocal = (worldPoint) => jar.inner.worldToLocal(worldPoint.clone());
@@ -213,6 +212,22 @@ let drag = null;
 let pendingMove = null;
 let hover = null;
 const windowVel = { x: 0, y: 0, dx: 0, dy: 0 };
+
+// The wheel zooms the whole widget: the window grows or shrinks around the jar's base.
+canvas.addEventListener(
+  'wheel',
+  (e) => {
+    e.preventDefault();
+    const pixels = e.deltaMode === 1 ? e.deltaY * 16 : e.deltaMode === 2 ? e.deltaY * 400 : e.deltaY;
+    window.widget.zoom(Math.pow(1.1, -pixels / 100)); // one notch = 10%, up = bigger
+  },
+  { passive: false },
+);
+
+// A covered window may stop being painted (Windows does this); then nothing would silence the buzz.
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) sound.silence();
+});
 
 canvas.addEventListener('contextmenu', (e) => {
   e.preventDefault();

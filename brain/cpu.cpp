@@ -8,10 +8,20 @@
 
 #include "brain.h"
 
+#pragma pack(push, 1)
+struct GraphHeader {  // 20 bytes, little-endian, no padding: see tools/build_brain_graph.py
+  char magic[4];
+  uint32_t version;
+  uint32_t n;
+  uint64_t e;
+};
+#pragma pack(pop)
+static_assert(sizeof(GraphHeader) == 20, "graph.bin header must be 20 bytes");
+
 bool load_graph(const std::string& path, Graph& g, std::string& err) {
   FILE* f = std::fopen(path.c_str(), "rb");
   if (!f) { err = "cannot open " + path; return false; }
-  struct { char magic[4]; uint32_t version; uint32_t n; uint64_t e; } __attribute__((packed)) h;
+  GraphHeader h;
   if (std::fread(&h, sizeof h, 1, f) != 1 || std::memcmp(h.magic, "FBRN", 4) != 0 || h.version != 1) {
     std::fclose(f); err = "bad graph header"; return false;
   }

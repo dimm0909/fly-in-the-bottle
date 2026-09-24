@@ -17,7 +17,7 @@ import struct
 
 import numpy as np
 import pandas as pd
-import pyarrow.feather as pf
+import pyarrow as pa
 
 root = pathlib.Path(__file__).resolve().parent.parent
 src = root / 'data/malecns'
@@ -44,21 +44,28 @@ ids = neurons.bodyId.to_numpy()
 N = len(ids)
 print(f'{N:,} neurons')
 
-w = pf.read_table(src / 'connectome-weights-male-cns-v1.0-minconf-0.5.feather')
-pre_id = w['body_pre'].to_numpy()
-post_id = w['body_post'].to_numpy()
-count = w['weight'].to_numpy()
-
 def index_of(x):
     i = np.searchsorted(ids, x)
     i[i == N] = 0
     return np.where(ids[i] == x, i, -1)
 
-pre = index_of(pre_id)
-post = index_of(post_id)
-mask = (pre >= 0) & (post >= 0) & (count >= args.min_syn)
-pre, post, count = pre[mask].astype(np.uint32), post[mask].astype(np.uint32), count[mask].astype(np.float32)
-del w, pre_id, post_id
+
+# The weights file is ~152 million rows, most of them between fragments we drop. It is stored as
+# thousands of small Arrow record batches, so stream them: memory stays small (a few GB less than
+# reading the whole table, which needs ~12 GB).
+reader = pa.ipc.open_file(pa.memory_map(str(src / 'connectome-weights-male-cns-v1.0-minconf-0.5.feather')))
+pre_parts, post_parts, count_parts = [], [], []
+for i in range(reader.num_record_batches):
+    batch = reader.get_batch(i)
+    pre = index_of(batch.column('body_pre').to_numpy(zero_copy_only=False))
+    post = index_of(batch.column('body_post').to_numpy(zero_copy_only=False))
+    count = batch.column('weight').to_numpy(zero_copy_only=False)
+    keep = (pre >= 0) & (post >= 0) & (count >= args.min_syn)
+    pre_parts.append(pre[keep].astype(np.uint32))
+    post_parts.append(post[keep].astype(np.uint32))
+    count_parts.append(count[keep].astype(np.float32))
+pre, post, count = np.concatenate(pre_parts), np.concatenate(post_parts), np.concatenate(count_parts)
+del pre_parts, post_parts, count_parts
 weight = count * neurons.sign.to_numpy()[pre]
 order = np.lexsort((post, pre))
 pre, post, weight = pre[order], post[order], weight[order].astype(np.float32)

@@ -1,31 +1,31 @@
 import * as THREE from 'three';
-import { STLLoader } from '../node_modules/three/examples/jsm/loaders/STLLoader.js';
-import { mergeVertices } from '../node_modules/three/examples/jsm/utils/BufferGeometryUtils.js';
 
-// Anatomical fly: the 39 body-part meshes of NeuroMechFly v2 (micro-CT of a real Drosophila,
-// NeLy-EPFL/flygym, Apache-2.0), assembled from assets/fly/rig.json.
+// Anatomical fly: FlyBody (TuragaLab/flybody, Apache-2.0; Vaxenburg et al., Nature 2025), a female
+// Drosophila built from confocal microscopy (67 manually segmented body components): facetted
+// compound eyes, ocelli, wing veins and membrane, abdominal segments with lower plates, antennae,
+// bristled proboscis, and legs of coxa, femur, tibia, four tarsal segments and a claw.
+// tools/build_fly_flybody.py turns it into assets/fly/flybody/{rig.json,meshes.bin}.
 //
 // The source frame is x forward, y left, z up in millimetres; ours is x left, y up, z forward
-// in jar units. Bodies are placed exactly as in the rig; legs are re-posed by IK every frame.
+// in jar units. The bodies keep FlyBody's rest pose, which is a standing pose with spread wings;
+// legs are re-posed by IK every frame, wings, head, abdomen and proboscis by their own rules.
 
 /** Layer the fly lives on: it is rendered to an offscreen target and seen through the glass. */
 export const INNER_LAYER = 1;
 
-export const MM = 0.2; // jar units per millimetre of real fly
-const GROUND_MM = 1.0; // how far below the thorax origin the feet stand
-const THORAX_CENTER_Z_MM = -0.096;
-/** Height of the body centre above a surface while standing, in jar units. */
-export const BODY_H = (GROUND_MM + THORAX_CENTER_Z_MM) * MM;
+export const MM = 0.17; // jar units per millimetre of real fly
+const GROUND_MM = 1.319; // feet stand this far below the thorax origin (rig.json constants.groundMM)
+/** Height of the thorax origin above a surface while standing, in jar units. */
+export const BODY_H = GROUND_MM * MM;
 
-const { Vector3: V3, Quaternion, Matrix4 } = THREE;
-const DOWN = new V3(0, -1, 0);
+const { Vector3: V3, Quaternion } = THREE;
 
 const toV = (p) => new V3(p[1], p[2], p[0]);
 const toQ = ([w, x, y, z]) => new Quaternion(y, z, x, w);
 
-// rows: ours.x = src.y, ours.y = src.z, ours.z = src.x
-const PERMUTE = new Matrix4().set(0, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1);
-const REFLECT_Y = new Matrix4().makeScale(1, -1, 1);
+const AX_X = new V3(1, 0, 0);
+const AX_Y = new V3(0, 1, 0);
+const AX_Z = new V3(0, 0, 1);
 
 // ---------------------------------------------------------------------------
 // Loading
@@ -36,216 +36,186 @@ export async function loadFlyAssets() {
     const bytes = await window.widget.readAsset(rel);
     return bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
   };
-  const rig = JSON.parse(new TextDecoder().decode(await read('fly/rig.json')));
-  const loader = new STLLoader();
-  const names = [...new Set(Object.values(rig.bodies).map((b) => b.mesh))];
-  const geos = {};
-  await Promise.all(
-    names.map(async (name) => {
-      geos[name] = loader.parse(await read(`fly/meshes/${name}.stl`));
-    }),
-  );
-  return { rig, geos };
+  const rig = JSON.parse(new TextDecoder().decode(await read('fly/flybody/rig.json')));
+  const blob = await read('fly/flybody/meshes.bin');
+  return { rig, blob };
 }
 
 // ---------------------------------------------------------------------------
 // Geometry & materials
 // ---------------------------------------------------------------------------
 
-/** STL (metres, source frame) -> smooth-shaded geometry in jar units, optionally mirrored. */
-function prepareGeometry(source, mirror) {
-  const g = source.clone();
-  g.deleteAttribute('normal');
-  const m = new Matrix4().makeScale(1000 * MM, 1000 * MM, 1000 * MM).multiply(PERMUTE);
-  if (mirror) m.multiply(REFLECT_Y);
-  g.applyMatrix4(m);
-  const merged = mergeVertices(g, 1e-6);
-  if (mirror) {
-    // a reflection flips the winding
-    const index = merged.index.array;
-    for (let i = 0; i < index.length; i += 3) {
-      const t = index[i + 1];
-      index[i + 1] = index[i + 2];
-      index[i + 2] = t;
-    }
+/** One mesh of the blob -> BufferGeometry in jar units, source frame permuted into ours. */
+function geometryOf(m, blob) {
+  const n = m.vertexCount;
+  const src = new Float32Array(blob, m.pos, n * 3);
+  const nsrc = new Int8Array(blob, m.nor, n * 3);
+  const pos = new Float32Array(n * 3);
+  const nor = new Int8Array(n * 3);
+  for (let i = 0; i < n; i++) {
+    const x = src[i * 3];
+    const y = src[i * 3 + 1];
+    const z = src[i * 3 + 2];
+    pos[i * 3] = y * MM;
+    pos[i * 3 + 1] = z * MM;
+    pos[i * 3 + 2] = x * MM;
+    nor[i * 3] = nsrc[i * 3 + 1];
+    nor[i * 3 + 1] = nsrc[i * 3 + 2];
+    nor[i * 3 + 2] = nsrc[i * 3];
   }
-  merged.computeVertexNormals();
-  return merged;
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  g.setAttribute('normal', new THREE.BufferAttribute(nor, 3, true));
+  g.setIndex(new THREE.BufferAttribute(new Uint32Array(blob, m.idx, m.indexCount), 1));
+  g.computeBoundingBox();
+  g.computeBoundingSphere();
+  return g;
 }
 
-const TAN = new THREE.Color().setRGB(0.5, 0.36, 0.2, THREE.SRGBColorSpace);
-const DARK = new THREE.Color().setRGB(0.17, 0.11, 0.07, THREE.SRGBColorSpace);
-const PALE = new THREE.Color().setRGB(0.66, 0.58, 0.44, THREE.SRGBColorSpace);
-const LEG = new THREE.Color().setRGB(0.42, 0.3, 0.17, THREE.SRGBColorSpace);
-const smoothstep = (a, b, x) => {
-  const t = Math.min(Math.max((x - a) / (b - a), 0), 1);
-  return t * t * (3 - 2 * t);
-};
+const srgb = (r, g, b) => new THREE.Color().setRGB(r, g, b, THREE.SRGBColorSpace);
 
-/** Bake vertex colours: tan cuticle with dark abdominal bands and thoracic stripes. */
-function paint(geometry, name) {
-  const pos = geometry.attributes.position;
-  const nor = geometry.attributes.normal;
-  geometry.computeBoundingBox();
-  const bb = geometry.boundingBox;
-  const colors = new Float32Array(pos.count * 3);
-  const c = new THREE.Color();
-  for (let i = 0; i < pos.count; i++) {
-    const x = pos.getX(i);
-    const z = pos.getZ(i);
-    c.copy(TAN);
-    if (/^c_abdomen[3-6]$/.test(name)) {
-      // dark tergite band on the posterior part of each segment (z is the body axis)
-      const t = (z - bb.min.z) / (bb.max.z - bb.min.z); // 0 = posterior
-      c.lerp(DARK, 0.92 * (1 - smoothstep(0.28, 0.5, t)) * smoothstep(-0.05, 0.05, nor.getY(i) + 0.6));
-    } else if (name === 'c_abdomen12') {
-      c.lerp(DARK, 0.3 * (1 - smoothstep(0.0, 0.3, (z - bb.min.z) / (bb.max.z - bb.min.z))));
-    } else if (name === 'c_thorax') {
-      // dorsal stripes
-      const stripe = Math.max(1 - smoothstep(0.012, 0.03, Math.abs(x)), 1 - smoothstep(0.012, 0.03, Math.abs(Math.abs(x) - 0.09)));
-      c.lerp(DARK, 0.75 * stripe * smoothstep(0.2, 0.7, nor.getY(i)));
-    } else if (/_(rostrum|haustellum)$/.test(name)) {
-      c.copy(PALE);
-    } else if (/_(coxa|trochanterfemur|tibia)$/.test(name)) {
-      c.copy(LEG);
-    } else if (/_tarsus\d$/.test(name)) {
-      c.copy(LEG).lerp(DARK, 0.55);
-    } else if (/_(arista|funiculus)$/.test(name)) {
-      c.copy(DARK);
-    } else if (/_haltere$/.test(name)) {
-      c.copy(PALE);
-    }
-    c.toArray(colors, i * 3);
-  }
-  geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-}
-
-function makeMaterials() {
-  const cuticle = new THREE.MeshPhysicalMaterial({
-    vertexColors: true,
-    roughness: 0.5,
-    metalness: 0,
-    clearcoat: 0.35,
-    clearcoatRoughness: 0.35,
-  });
-  const eye = new THREE.MeshPhysicalMaterial({
-    color: 0x9b1a10,
-    roughness: 0.22,
-    clearcoat: 1,
-    clearcoatRoughness: 0.1,
-    emissive: 0x2a0402,
-    flatShading: true, // the facets of a compound eye
-  });
-  const wing = (opacity) =>
-    new THREE.MeshPhysicalMaterial({
-      color: 0xe8eef2,
+function makeMaterials(defs) {
+  const rgba = (name) => defs[name]?.rgba ?? [0.5, 0.5, 0.5, 1];
+  const cuticle = (name, extra = {}) => {
+    const [r, g, b] = rgba(name);
+    return new THREE.MeshPhysicalMaterial({ color: srgb(r, g, b), roughness: 0.5, metalness: 0, clearcoat: 0.3, clearcoatRoughness: 0.4, ...extra });
+  };
+  const membrane = (opacity) => {
+    const [r, g, b] = rgba('membrane');
+    return new THREE.MeshPhysicalMaterial({
+      color: srgb(r, g, b),
       transparent: true,
       opacity,
-      roughness: 0.12,
+      roughness: 0.1,
       side: THREE.DoubleSide,
       depthWrite: false,
       iridescence: 1,
       iridescenceIOR: 1.5,
     });
-  return { cuticle, eye, wingMain: wing(0.36), wingGhost: wing(0.1) };
+  };
+  const black = { color: srgb(0.035, 0.03, 0.03), roughness: 0.4, clearcoat: 0.4 };
+  return {
+    byName: {
+      body: cuticle('body', { color: srgb(0.62, 0.40, 0.17) }), // FlyBody's own orange, nudged towards yellow-brown
+      lower: cuticle('lower'),
+      brown: cuticle('brown', { roughness: 0.45 }),
+      black: cuticle('black', black),
+      'bristle-brown': cuticle('bristle-brown', black),
+      ocelli: cuticle('ocelli', { roughness: 0.15, clearcoat: 1 }),
+      red: cuticle('red', { roughness: 0.2, clearcoat: 1, clearcoatRoughness: 0.08, emissive: srgb(0.16, 0.01, 0.0) }),
+      membrane: membrane(0.4),
+    },
+    ghost: membrane(0.1),
+  };
 }
 
 // ---------------------------------------------------------------------------
 // Assembly
 // ---------------------------------------------------------------------------
 
-// Standing and flying foot targets in the thorax frame (source frame, mm).
-const STANCE = { f: [0.55, 1.25, -GROUND_MM], m: [-0.55, 2.0, -GROUND_MM], h: [-1.65, 1.6, -GROUND_MM] };
-const TUCK = { f: [0.4, 0.55, -0.75], m: [-0.5, 0.75, -0.95], h: [-1.5, 0.6, -1.0] };
 const GROUP = { f: 0, m: 1, h: 0 }; // tripod gait: (L1, R2, L3) vs (R1, L2, R3)
+const FOLD_YAW = 1.6; // wing folded along the abdomen: this far round the vertical axis from spread
+const FOLD_ROLL = -0.05;
 
-export function buildFlyModel({ rig, geos }) {
-  const materials = makeMaterials();
+const _v = new V3();
+const _q = new Quaternion();
+const _q2 = new Quaternion();
+
+function worldQuat(node) {
+  return node.getWorldQuaternion(new Quaternion());
+}
+
+export function buildFlyModel({ rig, blob }) {
+  const materials = makeMaterials(rig.materials);
   const root = new THREE.Group();
   const body = new THREE.Group();
   root.add(body);
 
-  const geometry = {};
-  const geometryFor = (bodySpec, name) => {
-    const key = `${bodySpec.mesh}${bodySpec.mirror ? ':m' : ''}`;
-    if (!geometry[key]) {
-      geometry[key] = prepareGeometry(geos[bodySpec.mesh], bodySpec.mirror);
-      paint(geometry[key], bodySpec.mesh);
-    }
-    return geometry[key];
-  };
+  const geometries = rig.meshes.map((m) => geometryOf(m, blob));
 
+  // --- the body tree, in FlyBody's rest pose
   const nodes = {};
-  const build = (name) => {
-    if (nodes[name]) return nodes[name];
-    const spec = rig.bodies[name];
+  const list = rig.bodies.map((b) => {
     const node = new THREE.Group();
-    node.name = name;
-    node.position.copy(toV(spec.pos)).multiplyScalar(MM);
-    node.quaternion.copy(toQ(spec.quat));
-    const isEye = /_eye$/.test(name);
-    const isWing = /_wing$/.test(name);
-    const mesh = new THREE.Mesh(geometryFor(spec, name), isEye ? materials.eye : isWing ? materials.wingMain : materials.cuticle);
-    node.add(mesh);
-    nodes[name] = node;
-    (spec.parent ? build(spec.parent) : body).add(node);
+    node.name = b.name;
+    node.position.copy(toV(b.pos)).multiplyScalar(MM);
+    node.quaternion.copy(toQ(b.quat));
+    for (const mi of b.meshes) {
+      const m = rig.meshes[mi];
+      node.add(new THREE.Mesh(geometries[mi], materials.byName[m.material] ?? materials.byName.body));
+    }
+    nodes[b.name] = node;
     return node;
-  };
-  for (const name of Object.keys(rig.bodies)) build(name);
-
-  // Put the thorax's centre of volume at the model origin.
+  });
+  rig.bodies.forEach((b, i) => (b.parent >= 0 ? list[b.parent] : body).add(list[i]));
   const thorax = nodes.c_thorax;
-  thorax.position.set(0, 0, 0);
-  const box = new THREE.Box3().setFromBufferAttribute(geometry.c_thorax.attributes.position);
-  thorax.position.copy(box.getCenter(new V3())).negate();
+  root.updateMatrixWorld(true);
 
-  // --- Wings: the real wing plus two fainter copies fanned around it to fake motion blur.
+  // --- wings: the real wing plus two fainter membrane copies fanned around it (motion blur)
   const wings = [];
   for (const [s, side] of [['l', 1], ['r', -1]]) {
     const main = nodes[`${s}_wing`];
-    const rest = main.quaternion.clone();
-    wings.push({ node: main, side, ghost: 0, rest });
+    const spread = main.quaternion.clone();
+    const fold = new Quaternion().setFromAxisAngle(AX_Y, side * FOLD_YAW).multiply(new Quaternion().setFromAxisAngle(AX_Z, side * FOLD_ROLL));
+    wings.push({ node: main, side, ghost: 0, spread, fold });
+    const membrane = rig.bodies.find((b) => b.name === `${s}_wing`).meshes.find((mi) => rig.meshes[mi].material === 'membrane');
     for (const ghost of [0.45, -0.45]) {
       const node = new THREE.Group();
       node.position.copy(main.position);
-      node.quaternion.copy(rest);
-      node.add(new THREE.Mesh(geometry[`l_wing${side < 0 ? ':m' : ''}`], materials.wingGhost));
+      node.quaternion.copy(spread);
+      node.add(new THREE.Mesh(geometries[membrane], materials.ghost));
       thorax.add(node);
-      wings.push({ node, side, ghost, rest });
+      wings.push({ node, side, ghost, spread, fold });
     }
   }
   const halteres = [['l', 1], ['r', -1]].map(([s, side]) => ({ node: nodes[`${s}_haltere`], side, rest: nodes[`${s}_haltere`].quaternion.clone() }));
 
-  // --- Legs: coxa+femur and tibia+tarsus are each treated as one straight bone for IK.
+  // --- legs. Coxa+femur and tibia+tarsi are each treated as one rigid bone for IK, in FlyBody's
+  //     rest pose: the upper bone runs from the hip to the knee (tibia origin), the lower bone
+  //     from the knee to the tip of the claw.
   const legs = [];
   for (const [s, side] of [['l', 1], ['r', -1]]) {
     for (const kind of ['f', 'm', 'h']) {
       const p = `${s}${kind}_`;
       const coxa = nodes[`${p}coxa`];
-      const femur = nodes[`${p}trochanterfemur`];
+      const femur = nodes[`${p}femur`];
       const tibia = nodes[`${p}tibia`];
-      const tarsi = [1, 2, 3, 4, 5].map((i) => nodes[`${p}tarsus${i}`]);
-
-      const kneeOffset = femur.position.clone().add(tibia.position);
-      const footOffset = new V3();
-      for (const t of tarsi) footOffset.add(t.position);
-      footOffset.y -= 0.117 * MM; // the claws beyond tarsus5's origin
-
-      const sideSign = side;
-      const inThorax = (mm) => toV([mm[0], mm[1] * sideSign, mm[2]]).multiplyScalar(MM).add(thorax.position);
+      const hip = coxa.getWorldPosition(new V3());
+      const knee = tibia.getWorldPosition(new V3());
+      // the claw tip: the vertex of the last tarsal segments farthest from the knee
+      const foot = knee.clone();
+      let far = 0;
+      for (const name of [`${p}tarsus4`, `${p}claw`]) {
+        const node = nodes[name];
+        for (const mesh of node.children) {
+          if (!mesh.isMesh) continue; // child bodies live in the same list
+          const a = mesh.geometry.attributes.position;
+          for (let i = 0; i < a.count; i++) {
+            _v.fromBufferAttribute(a, i).applyMatrix4(node.matrixWorld);
+            const d = _v.distanceToSquared(knee);
+            if (d > far) {
+              far = d;
+              foot.copy(_v);
+            }
+          }
+        }
+      }
       legs.push({
         side,
         idx: ['f', 'm', 'h'].indexOf(kind),
         group: (GROUP[kind] + (side > 0 ? 0 : 1)) % 2,
         coxa,
         tibia,
-        hip: coxa.position.clone().add(thorax.position),
-        a: kneeOffset.length(),
-        b: footOffset.length(),
-        kneeDir0: kneeOffset.clone().normalize(),
-        footDir0: footOffset.clone().normalize(),
-        home: inThorax(STANCE[kind]),
-        tuck: inThorax(TUCK[kind]),
+        hip,
+        a: hip.distanceTo(knee),
+        b: knee.distanceTo(foot),
+        upperDir0: knee.clone().sub(hip).normalize(),
+        lowerDir0: foot.clone().sub(knee).normalize(),
+        coxaRest: coxa.quaternion.clone(),
+        femurRest: femur.quaternion.clone(),
+        tibiaRestWorld: worldQuat(tibia),
+        home: foot.clone(), // FlyBody's rest pose is a standing pose: the claws are on the ground
+        tuck: new V3(foot.x * 0.5, foot.y * 0.55, foot.z * 0.75), // in flight the legs hang tucked under the body
         twitch: new V3(), // brain-driven offset of the foot target, body space
         planted: new V3(),
         stepFrom: new V3(),
@@ -256,8 +226,55 @@ export function buildFlyModel({ rig, geos }) {
     }
   }
 
+  // --- head, abdomen and proboscis rotate about their own joints, about the fly's axes
+  const head = nodes.c_head;
+  const headRest = head.quaternion.clone();
+  const headRestWorld = worldQuat(head);
+  const rostrum = nodes.c_rostrum;
+  const haustellum = nodes.c_haustellum;
+  const rostrumRest = rostrum.quaternion.clone();
+  const haustellumRest = haustellum.quaternion.clone();
+  const rostrumAxis = AX_X.clone().applyQuaternion(headRestWorld.clone().invert());
+  const haustellumAxis = AX_X.clone().applyQuaternion(worldQuat(rostrum).invert());
+
+  const segments = [2, 3, 4, 5, 6, 7].map((i) => {
+    const node = nodes[`c_abdomen${i}`];
+    return { node, rest: node.quaternion.clone(), axis: AX_X.clone().applyQuaternion(worldQuat(node.parent).invert()) };
+  });
+
+  // where the front feet go while grooming: just in front of the head, a little below its centre
+  const headBox = new THREE.Box3();
+  for (const mesh of head.children) if (mesh.isMesh) headBox.union(mesh.geometry.boundingBox);
+  headBox.applyMatrix4(head.matrixWorld);
+  const groom = new V3(0, headBox.min.y + (headBox.max.y - headBox.min.y) * 0.3, headBox.max.z + 0.03);
+
   root.traverse((o) => o.layers.set(INNER_LAYER));
-  return { root, body, head: nodes.c_head, thorax, nodes, wings, halteres, legs };
+
+  return {
+    root,
+    body,
+    head,
+    thorax,
+    nodes,
+    wings,
+    halteres,
+    legs,
+    groom,
+    /** Neck: nod (pitch) and turn (yaw), both in the thorax frame. */
+    setHead(pitch, yaw) {
+      head.quaternion.copy(_q.setFromAxisAngle(AX_Y, yaw)).multiply(_q2.setFromAxisAngle(AX_X, pitch)).multiply(headRest);
+    },
+    /** Abdomen curl: total bend in radians over its six joints (negative = tail down and forward). */
+    bendAbdomen(total) {
+      const step = total / segments.length;
+      for (const s of segments) s.node.quaternion.copy(_q.setFromAxisAngle(s.axis, step)).multiply(s.rest);
+    },
+    /** Proboscis: 0 folded, 1 fully extended. */
+    setProboscis(k) {
+      rostrum.quaternion.copy(_q.setFromAxisAngle(rostrumAxis, -0.9 * k)).multiply(rostrumRest);
+      haustellum.quaternion.copy(_q.setFromAxisAngle(haustellumAxis, -0.5 * k)).multiply(haustellumRest);
+    },
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -271,10 +288,12 @@ const _knee = new V3();
 const _foot = new V3();
 const _qa = new Quaternion();
 const _qb = new Quaternion();
+const _qf = new Quaternion();
 
 /**
- * Two-bone IK in body space: hip -> knee -> foot with the leg's own bone lengths.
- * A foot out of reach is pulled in. Writes the coxa and tibia orientations.
+ * Two-bone IK in body space: hip -> knee -> claw tip with the leg's own bone lengths. A foot out
+ * of reach is pulled in. Each bone is turned from its rest direction to the new one with the
+ * smallest rotation; writes the coxa and tibia orientations.
  */
 export function solveLeg(leg, target) {
   const { a, b } = leg;
@@ -295,13 +314,14 @@ export function solveLeg(leg, target) {
   _perp.copy(_pole).addScaledVector(_d, -_pole.dot(_d)).normalize();
   _knee.copy(leg.hip).addScaledVector(_d, x).addScaledVector(_perp, h);
 
-  // upper bone: coxa+femur point from the hip to the knee
+  // upper bone (coxa and femur move as one): the thorax frame is the coxa's parent, so local = world
   _d.subVectors(_knee, leg.hip).normalize();
-  _qa.setFromUnitVectors(leg.kneeDir0, _d);
+  _qa.setFromUnitVectors(leg.upperDir0, _d).multiply(leg.coxaRest);
   leg.coxa.quaternion.copy(_qa);
-  // lower bone: tibia+tarsi point from the knee to the foot (tibia is parented to the femur)
+  // lower bone (tibia and tarsi): expressed relative to the femur's new world orientation
   _d.subVectors(_foot, _knee).normalize();
-  _qb.setFromUnitVectors(leg.footDir0, _d);
-  leg.tibia.quaternion.copy(_qa).invert().multiply(_qb);
+  _qb.setFromUnitVectors(leg.lowerDir0, _d).multiply(leg.tibiaRestWorld);
+  _qf.copy(_qa).multiply(leg.femurRest).invert();
+  leg.tibia.quaternion.copy(_qf).multiply(_qb);
   leg.foot.copy(_foot);
 }

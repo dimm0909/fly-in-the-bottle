@@ -9,15 +9,45 @@
 
 | Что | Описание |
 | --- | --- |
-| `SIZES`, `LAYERS`, `DEFAULTS` | Размеры окна (S/M/L), слои (`desktop`, `normal`, `top`) и настройки по умолчанию: `{ x, y, size, layer, sound, brain }`. |
-| `flag(name)` | Читает флаг `--name` или `--name=значение` из `process.argv`; `undefined`, если флага нет. |
-| `loadSettings()`, `saveSettings()` | Чтение и запись `settings.json`; в режиме `--shot` запись отключена. |
-| `createWindow()`, `recreateWindow()` | Создают окно (слой определяет тип окна); пересоздание нужно при смене слоя. |
-| `buildMenu()` | Собирает нативное меню: звук, мозг, размер, положение, сброс положения, выход. |
+| `BASE`, `SCALE_MIN`, `SCALE_MAX`, `PRESETS` | Базовый размер окна (360×500 при масштабе 1), границы масштаба (0,5 и 3) и пресеты меню S/M/L (0,8; 1; 1,3). |
+| `LAYERS`, `DEFAULTS` | Слои (`desktop`, `normal`, `top`) и настройки по умолчанию: `{ x, y, scale, layer, sound, brain }`. |
+| `flag(name)` | Читает флаг `--name` или `--name=значение` из `process.argv`; `undefined`, если флага нет. Если флаг повторён, берётся последний. |
+| `loadSettings()`, `saveSettings()` | Чтение и запись `settings.json` (старый ключ `size` переводится в `scale`); в режиме `--shot` запись отключена. |
+| `createWindow()`, `recreateWindow()` | Создают окно (`platform.windowOptions` и `platform.applyLayer` задают слой); пересоздание нужно при смене слоя. |
+| `applyScale(target)` | Меняет масштаб окна вокруг середины его нижней кромки; зажимает в 0,5-3, в размер экрана и запоминает. Вызывается пунктами меню и обработчиком `widget:zoom`. |
+| `buildMenu()` | Собирает нативное меню: звук, мозг, размер (пресеты, текущий масштаб, сброс), положение, сброс положения, выход. |
 | `runShot()` | Тестовый стенд `--shot`: ждёт `window.__w`, выполняет `--script`, ждёт `--delay`, сохраняет PNG и выходит. |
 | `brain` | `{ start(), stop(), status() }`: жизненный цикл мозга (использует `BrainHost`). `status()` возвращает `{ available, enabled, running, error }`. |
 
 IPC-обработчики перечислены на странице [architecture](../architecture.md).
+
+## platform.js
+
+Всё, что зависит от операционной системы при создании окна. Подробнее: [windows](../windows.md).
+
+```js
+const platform = require('./platform');
+new BrowserWindow({ ..., ...platform.windowOptions(layer) });
+const stop = platform.applyLayer(win, layer);   // stop() при закрытии окна
+```
+
+| Экспорт | Описание |
+| --- | --- |
+| `isWin`, `isLinux` | Флаги платформы. |
+| `windowOptions(layer)` | Опции конструктора: на Linux для `desktop` `{ type: 'desktop' }`, на Windows `{ type: 'toolbar', focusable: false }`, иначе `{}`. |
+| `applyLayer(win, layer)` | То, что опциями не задать: `top` -> `setAlwaysOnTop(true, 'screen-saver')`; вне Windows для `desktop` и `top` -> `setVisibleOnAllWorkspaces`; на Windows для `desktop` каждые 2 с `SetWindowPos(HWND_BOTTOM)` через необязательный `koffi`. Возвращает функцию остановки таймера. |
+
+## tools/dev.js
+
+Кроссплатформенный помощник, на который ссылаются все npm-скрипты (`node tools/dev.js <команда>`).
+
+| Команда | Что делает |
+| --- | --- |
+| `start [аргументы]` | Запускает `electron .`, на Linux с `--no-sandbox`, без `ELECTRON_RUN_AS_NODE`; пробрасывает `SIGINT`/`SIGTERM`. |
+| `setup-brain` | Скачивает три файла MaleCNS, создаёт `.venv`, ставит `pyarrow` и `pandas`, строит граф и группы, собирает сайдкар. |
+| `compile-brain` | Только собирает сайдкар (`g++`, `c++`, `clang++`, на Windows `cl`, иначе `ziglang` из PyPI; переменная `CXX` выбирает компилятор). |
+| `py <аргументы>` | Запускает интерпретатор `.venv` с этими аргументами. |
+| `docs` | Ставит зависимости документации при необходимости и делает полную пересборку Sphinx. |
 
 ## preload.js
 
@@ -25,12 +55,13 @@ IPC-обработчики перечислены на странице [archite
 
 | Метод | Возвращает | Описание |
 | --- | --- | --- |
-| `getSettings()` | `Promise<{ sound, size, brain }>` | Настройки для рендерера. |
+| `getSettings()` | `Promise<{ sound, scale, brain }>` | Настройки для рендерера. |
 | `onSettings(callback)` | - | Подписка на изменения из меню. |
 | `readAsset(relativePath)` | `Promise<Uint8Array>` | Читает файл из `assets/`. |
 | `brainInfo()` | `Promise<{ backend, neurons, connections, groups, sizes } \| null>` | Сведения о мозге; `null`, если он не запущен. |
 | `brainStep(drives, ms)` | `Promise<{ [группа]: число спайков } \| null>` | Токи (мВ по группам) → продвижение на `ms` → счётчики спайков. |
 | `brainNoise(groups, rate)` | `Promise<void>` | Пуассоновский шум (Гц на нейрон) на группах. |
+| `zoom(factor)` | - | Умножить масштаб окна на `factor` (обработчик колеса мыши). |
 | `showMenu()` | - | Нативное меню. |
 | `dragStart()`, `dragMove(dx, dy)`, `dragEnd()` | - | Перемещение окна. |
 
@@ -42,8 +73,8 @@ const { BrainHost, available, FILES } = require('./brain-host');
 
 | Что | Описание |
 | --- | --- |
-| `available()` | `true`, если на месте `data/brain/brain`, `graph.bin` и `groups.txt`. |
-| `FILES` | Пути `{ binary, graph, groups }`. |
+| `available()` | `true`, если на месте `data/brain/brain` (на Windows `brain.exe`), `graph.bin` и `groups.txt`. |
+| `FILES` | Пути `{ binary, graph, groups }`; имя исполняемого файла зависит от платформы. |
 | `new BrainHost()` | Хозяин процесса. Поля: `ready`, `names` (группы в порядке протокола), `sizes` (нейронов в группе). |
 | `await host.start()` | Запускает процесс, ждёт `READY`, читает список групп; возвращает `{ backend, neurons, connections, groups, sizes }`. |
 | `await host.step(drives, ms)` | Отправляет только изменившиеся `drive`, затем `advance ms`; возвращает объект счётчиков спайков по группам. Группы, которых нет в `drives`, отпускаются; неизвестные имена пропускаются. |
@@ -59,7 +90,9 @@ const { BrainHost, available, FILES } = require('./brain-host');
 
 | Функция | Описание |
 | --- | --- |
-| `pick(clientX, clientY)` | Что под курсором: `{ kind: 'fly' \| 'lid' \| 'glass', point }` (точка в мировых координатах) или `null` мимо банки. |
+| `pick(clientX, clientY)` | Что под курсором: `{ kind: 'fly' \| 'lid' \| 'glass', point }` (точка в мировых координатах) или `null` мимо банки. Муха выбирается, если луч проходит стекло и крышка не ближе. |
+| обработчик `wheel` | На холсте: `window.widget.zoom(1,1^(−Δ/100))`, строки и страницы колеса пересчитываются в пиксели. |
+| обработчик `visibilitychange` | Когда страница скрыта (окно перекрыто или свёрнуто), вызывает `sound.silence()`. |
 | `shove(worldPoint, strength)` | Толчок банки в точке: наклон тем сильнее, чем выше точка, и закрутка от боковой точки. |
 | `pokeFly(hit)`, `tapGlass(hit)` | Тычок в муху и стук по стеклу. |
 | `pokedPart()` | Какая часть тела под лучом: `{ name, x }` (по узлам мухи; запасной вариант - `c_thorax`). |
@@ -83,9 +116,9 @@ const { BrainHost, available, FILES } = require('./brain-host');
 | Поле или метод | Описание |
 | --- | --- |
 | `root` | Группа наклона (pitch, roll) вокруг центра основания. |
-| `spin` | Группа вращения вокруг оси; в ней стекло, крышка, этикетка. |
+| `spin` | Группа вращения вокруг оси; в ней стекло и крышка. |
 | `inner` | Группа содержимого (муха): наклоняется с банкой, но не вращается. |
-| `lid`, `label` | Группы/меши крышки и этикетки (для мыши и для проверки перекрытия). |
+| `lid` | Группа крышки (для мыши и для проверки перекрытия). |
 | `glassFront` | Внешняя ближняя оболочка стекла; цель луча для «под курсором банка». |
 | `shadow` | Плоскость тени на «столе». |
 | `setInnerTexture(texture)` | Текстура содержимого для преломления (`innerRT.texture`). |
@@ -105,22 +138,26 @@ const { BrainHost, available, FILES } = require('./brain-host');
 | Экспорт | Описание |
 | --- | --- |
 | `INNER_LAYER` | Слой мухи (1). |
-| `MM` | Единиц банки на миллиметр настоящей мухи (0,2). |
-| `BODY_H` | Высота центра груди над опорой в стойке. |
-| `loadFlyAssets()` | Асинхронно читает `rig.json` и 39 STL через `window.widget.readAsset`; возвращает `{ rig, geos }`. |
-| `buildFlyModel({ rig, geos })` | Собирает модель, см. ниже. |
+| `MM` | Единиц банки на миллиметр настоящей мухи (0,17). |
+| `BODY_H` | Высота центра груди над опорой в стойке (`groundMM × MM`, около 0,22). |
+| `loadFlyAssets()` | Асинхронно читает `fly/flybody/rig.json` и `meshes.bin` через `window.widget.readAsset`; возвращает `{ rig, blob }`. |
+| `buildFlyModel({ rig, blob })` | Собирает модель FlyBody, см. ниже. |
 | `solveLeg(leg, target)` | Двухзвенное IK ноги в системе тела; записывает `leg.coxa.quaternion`, `leg.tibia.quaternion` и `leg.foot`. |
 
-`buildFlyModel` возвращает `{ root, body, head, thorax, nodes, wings, halteres, legs }`:
+`buildFlyModel` возвращает `{ root, body, head, thorax, nodes, wings, halteres, legs, groom, setHead, bendAbdomen, setProboscis }`:
 
 | Поле | Описание |
 | --- | --- |
 | `root`, `body` | Корень (позиция/ориентация мухи) и группа тела внутри него. |
 | `head`, `thorax` | Узлы `c_head`, `c_thorax`. |
-| `nodes` | Все 69 узлов по имени (`c_abdomen3`, `l_wing`, `lf_tibia`, …). |
-| `wings[]` | `{ node, side, ghost, rest }`: три копии на сторону (настоящее крыло и две «призрачные»). |
+| `nodes` | Все 67 узлов по имени (`c_abdomen3`, `l_wing`, `lf_tibia`, …). |
+| `wings[]` | `{ node, side, ghost, spread, fold }`: три копии на сторону (настоящее крыло и две «призрачные»); `spread` - поза покоя (развёрнуто), `fold` - поворот в сложенное положение. |
 | `halteres[]` | `{ node, side, rest }`. |
-| `legs[]` | По ноге: `side` (+1 левая), `idx` (0 передняя, 1 средняя, 2 задняя), `group` (0/1 для шагов треногой), `coxa`, `tibia`, `hip`, `a`, `b`, `home`, `tuck`, `twitch` (смещение цели от мозга), `planted`, `stepFrom`, `stepTo`, `stepT`, `foot`. |
+| `legs[]` | По ноге: `side` (+1 левая), `idx` (0 передняя, 1 средняя, 2 задняя), `group` (0/1 для шагов треногой), `coxa`, `tibia`, `hip`, `a`, `b` (длины костей), `upperDir0`, `lowerDir0`, `coxaRest`, `femurRest`, `tibiaRestWorld` (поза покоя для IK), `home` (стопа в стойке), `tuck` (в полёте), `twitch` (смещение цели от мозга), `planted`, `stepFrom`, `stepTo`, `stepT`, `foot`. |
+| `groom` | Точка перед головой, куда сходятся передние лапки при чистке (вычисляется по боксу головы). |
+| `setHead(pitch, yaw)` | Наклон и поворот шеи, рад. |
+| `bendAbdomen(total)` | Суммарный изгиб брюшка по шести суставам, рад (отрицательный - хвост вниз и вперёд). |
+| `setProboscis(k)` | Хоботок: 0 сложен, 1 выдвинут. |
 
 ## src/fly.js
 
@@ -138,7 +175,7 @@ fly.update(dt, { gravity, shake });      // каждый кадр
 | `model` | Результат `buildFlyModel`. |
 | `state` | `'fly'`, `'scared'`, `'approach'`, `'perch'`, `'tumble'`, `'dizzy'`. |
 | `pos`, `vel`, `quat`, `heading` | Кинематика в координатах `jar.inner`. |
-| `hitRadius` | Радиус сферы для клика (0,34). |
+| `hitRadius` | Радиус сферы для клика (0,32). |
 | `buzz`, `buzzSpeed` | Громкость и скорость для звука, 0-1. |
 | `speed`, `activity` | Геттеры: скорость; 0 в покое, иначе больше 0 (для частоты кадров). |
 | `update(dt, env)` | Шаг. `env = { gravity: Vector3 (в системе банки), shake: number }`. |
@@ -213,6 +250,7 @@ fly.update(dt, { gravity, shake });      // каждый кадр
 | Член | Описание |
 | --- | --- |
 | `setEnabled(on)` | Включает или выключает звук (плавно), будит `AudioContext`. |
+| `silence()` | Мгновенно гасит жужжание (страница скрыта, обновлять громкость некому); следующий `update()` вернёт звук. |
 | `update({ buzz, speed, pan, depth })` | Раз в кадр: громкость (`buzz`), высота и яркость по `speed`, панорама `pan` (−1…1), лёгкий доплер по `depth` (+1 - к зрителю). |
 | `ting(strength = 1)` | Звон стекла (стук по банке). |
 | `tick(strength = 0.5)` | Сухой щелчок (муха ударилась о стекло). |

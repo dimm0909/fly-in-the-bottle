@@ -11,6 +11,7 @@ contextBridge.exposeInMainWorld('widget', {
   onSettings: (callback) => {
     ipcRenderer.on('settings:changed', (_event, settings) => callback(settings));
   },
+  zoom: (factor) => ipcRenderer.send('widget:zoom', factor),
   showMenu: () => ipcRenderer.send('widget:menu'),
   dragStart: () => ipcRenderer.send('widget:drag-start'),
   dragMove: (dx, dy) => ipcRenderer.send('widget:drag-move', dx, dy),

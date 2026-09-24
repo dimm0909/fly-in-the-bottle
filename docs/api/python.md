@@ -1,16 +1,18 @@
 # Python-инструменты
 
 Скрипты в `tools/` готовят данные и проверяют мозг. Запускаются из корня проекта интерпретатором `.venv`
-(`.venv/bin/python tools/…`), кроме `setup_brain.sh`.
+(`.venv/bin/python tools/…` на Linux, `.venv\Scripts\python.exe tools\…` на Windows) или одной командой на любой
+системе: `node tools/dev.js py tools/скрипт.py [аргументы]`. Сборкой и загрузкой занимается `tools/dev.js` (Node), а не
+Python-скрипт.
 
 ## Скрипты
 
 | Скрипт | Аргументы | Что делает |
 | --- | --- | --- |
-| `setup_brain.sh` | - | Скачивает коннектому, готовит `.venv`, строит граф и группы, собирает сайдкар. Идемпотентен: скачанное пропускается. |
-| `build_brain_graph.py` | `--min-syn N` (5) | Строит `data/brain/graph.bin` и `neurons.feather` из трёх файлов MaleCNS. Пиково ~12 ГБ RAM, около 30 с. |
-| `build_groups.py` | - | Строит `data/brain/groups.txt` и `groups.json` (размеры) и печатает список групп. |
-| `build_fly_rig.py` | - | Строит `assets/fly/rig.json` из `data/nmf/rigging.yaml`. |
+| `build_brain_graph.py` | `--min-syn N` (5) | Строит `data/brain/graph.bin` и `neurons.feather` из трёх файлов MaleCNS. Файл связей читается порциями Arrow: пик около 1,9 ГБ RAM, около 14 с. |
+| `build_groups.py` | - | Строит `data/brain/groups.txt` и `groups.json` (размеры) и печатает список групп. Файлы пишутся с `\n` на всех системах. |
+| `build_fly_flybody.py` | `--src`, `--out` | Строит `assets/fly/flybody/rig.json` и `meshes.bin` из клона FlyBody (`data/flybody`, см. [fly_model](../fly_model.md)). |
+| `probe_flybody.py` | - | Контрольные проекции позы покоя FlyBody (нужен `matplotlib`). |
 | `check_brain.py` | - | Девять проверок сайдкара; код возврата 0 при успехе, 1 при провале. |
 | `bench_brain.py` | - | Печатает стоимость счёта (простой, всплеск, спад, свет) и сверяет серию со значением 152/79/233/35/21/13. |
 | `explore/explore1.py … explore11.py` | `explore3.py --final`; `explore11.py ЧАСТОТА [СЕКУНД]` | Эксперименты калибровки, см. таблицу ниже. |
@@ -38,7 +40,8 @@
 
 ## brain_client
 
-Модуль `tools/brain_client.py` - клиент сайдкара, тот же протокол, что у виджета. Пример:
+Модуль `tools/brain_client.py` - клиент сайдкара, тот же протокол, что у виджета (имя исполняемого файла выбирается
+по платформе: `brain` или `brain.exe`). Пример:
 
 ```python
 import sys

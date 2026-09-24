@@ -1,13 +1,14 @@
 """Drive the brain sidecar from Python (exploration and tests). Same protocol as the widget uses."""
 import pathlib
 import subprocess
+import sys
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 
 
 class Brain:
     def __init__(self, backend='cpu', groups=None, binary=None):
-        cmd = [str(binary or ROOT / 'data/brain/brain'), '--graph', str(ROOT / 'data/brain/graph.bin'),
+        cmd = [str(binary or ROOT / 'data/brain' / ('brain.exe' if sys.platform == 'win32' else 'brain')), '--graph', str(ROOT / 'data/brain/graph.bin'),
                '--groups', str(groups or ROOT / 'data/brain/groups.txt'), '--backend', backend]
         self.p = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True, bufsize=1)
         ready = self.p.stdout.readline().split()

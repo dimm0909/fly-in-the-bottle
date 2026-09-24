@@ -1,0 +1,2246 @@
+{
+ "source": "TuragaLab/flybody (Apache-2.0), Vaxenburg et al., Nature 2025",
+ "units": "mm",
+ "frame": "x forward, y left, z up",
+ "constants": {
+  "groundMM": 1.3188
+ },
+ "materials": {
+  "body": {
+   "rgba": [
+    0.674,
+    0.35,
+    0.143,
+    1.0
+   ],
+   "shininess": 0.6
+  },
+  "red": {
+   "rgba": [
+    0.8,
+    0.0279,
+    0.00154,
+    1.0
+   ],
+   "shininess": 0.692
+  },
+  "ocelli": {
+   "rgba": [
+    0.128,
+    0.0488,
+    0.0154,
+    1.0
+   ],
+   "shininess": 1.0
+  },
+  "black": {
+   "rgba": [
+    0.0,
+    0.0,
+    0.0,
+    1.0
+   ],
+   "shininess": 0.727
+  },
+  "bristle-brown": {
+   "rgba": [
+    0.0,
+    0.0,
+    0.0,
+    1.0
+   ],
+   "shininess": 0.907
+  },
+  "lower": {
+   "rgba": [
+    0.799,
+    0.61,
+    0.386,
+    1.0
+   ],
+   "shininess": 0.6
+  },
+  "brown": {
+   "rgba": [
+    0.202,
+    0.0782,
+    0.0262,
+    1.0
+   ],
+   "shininess": 0.6
+  },
+  "membrane": {
+   "rgba": [
+    0.539,
+    0.686,
+    0.8,
+    0.4
+   ],
+   "shininess": 0.907,
+   "specular": 0.62
+  },
+  "blue": {
+   "rgba": [
+    0.2,
+    0.3,
+    1.0,
+    1.0
+   ],
+   "shininess": 0.6
+  },
+  "pink": {
+   "rgba": [
+    0.6,
+    0.3,
+    1.0,
+    1.0
+   ],
+   "shininess": 0.5
+  }
+ },
+ "bodies": [
+  {
+   "name": "c_thorax",
+   "src": "thorax",
+   "parent": -1,
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "meshes": [
+    0,
+    1
+   ]
+  },
+  {
+   "name": "c_head",
+   "src": "head",
+   "parent": 0,
+   "pos": [
+    0.567,
+    0.0,
+    -0.0305
+   ],
+   "quat": [
+    0.702,
+    -0.087,
+    0.087,
+    -0.702
+   ],
+   "meshes": [
+    2,
+    3,
+    4,
+    5
+   ]
+  },
+  {
+   "name": "c_rostrum",
+   "src": "rostrum",
+   "parent": 1,
+   "pos": [
+    0.0,
+    0.368,
+    -0.235
+   ],
+   "quat": [
+    0.0,
+    -0.0,
+    0.192,
+    -0.981
+   ],
+   "meshes": [
+    6,
+    7
+   ]
+  },
+  {
+   "name": "c_haustellum",
+   "src": "haustellum",
+   "parent": 2,
+   "pos": [
+    0.0,
+    0.377,
+    0.0
+   ],
+   "quat": [
+    0.0,
+    -0.0,
+    -0.347,
+    0.938
+   ],
+   "meshes": [
+    8,
+    9
+   ]
+  },
+  {
+   "name": "l_labrum",
+   "src": "labrum_left",
+   "parent": 3,
+   "pos": [
+    -0.0263,
+    0.182,
+    0.0
+   ],
+   "quat": [
+    0.741,
+    -0.0142,
+    -0.591,
+    0.319
+   ],
+   "meshes": [
+    10
+   ]
+  },
+  {
+   "name": "r_labrum",
+   "src": "labrum_right",
+   "parent": 3,
+   "pos": [
+    0.0263,
+    0.182,
+    0.0
+   ],
+   "quat": [
+    0.699,
+    0.00274,
+    0.642,
+    -0.316
+   ],
+   "meshes": [
+    11
+   ]
+  },
+  {
+   "name": "l_antenna",
+   "src": "antenna_left",
+   "parent": 1,
+   "pos": [
+    -0.0795,
+    0.378,
+    0.129
+   ],
+   "quat": [
+    0.785,
+    -0.59,
+    -0.0128,
+    0.192
+   ],
+   "meshes": [
+    12,
+    13
+   ]
+  },
+  {
+   "name": "r_antenna",
+   "src": "antenna_right",
+   "parent": 1,
+   "pos": [
+    0.0861,
+    0.38,
+    0.129
+   ],
+   "quat": [
+    0.59,
+    0.785,
+    -0.192,
+    -0.0128
+   ],
+   "meshes": [
+    14,
+    15
+   ]
+  },
+  {
+   "name": "l_wing",
+   "src": "wing_left",
+   "parent": 0,
+   "pos": [
+    -0.0694,
+    0.432,
+    0.091
+   ],
+   "quat": [
+    0.0,
+    -0.403,
+    0.0,
+    -0.915
+   ],
+   "meshes": [
+    16,
+    17
+   ]
+  },
+  {
+   "name": "r_wing",
+   "src": "wing_right",
+   "parent": 0,
+   "pos": [
+    -0.0694,
+    -0.432,
+    0.091
+   ],
+   "quat": [
+    0.0,
+    0.915,
+    0.0,
+    -0.403
+   ],
+   "meshes": [
+    18,
+    19
+   ]
+  },
+  {
+   "name": "c_abdomen1",
+   "src": "abdomen",
+   "parent": 0,
+   "pos": [
+    -0.447,
+    -0.00555,
+    0.0428
+   ],
+   "quat": [
+    -0.704,
+    -0.0859,
+    -0.0853,
+    -0.7
+   ],
+   "meshes": [
+    20,
+    21
+   ]
+  },
+  {
+   "name": "c_abdomen2",
+   "src": "abdomen_2",
+   "parent": 10,
+   "pos": [
+    0.0,
+    0.119,
+    0.0
+   ],
+   "quat": [
+    0.981,
+    -0.192,
+    -0.000269,
+    0.00144
+   ],
+   "meshes": [
+    22,
+    23
+   ]
+  },
+  {
+   "name": "c_abdomen3",
+   "src": "abdomen_3",
+   "parent": 11,
+   "pos": [
+    0.0,
+    0.212,
+    0.0
+   ],
+   "quat": [
+    0.996,
+    -0.0909,
+    6.7e-05,
+    0.000525
+   ],
+   "meshes": [
+    24,
+    25
+   ]
+  },
+  {
+   "name": "c_abdomen4",
+   "src": "abdomen_4",
+   "parent": 12,
+   "pos": [
+    0.0,
+    0.313,
+    0.0
+   ],
+   "quat": [
+    0.999,
+    -0.0332,
+    0.000147,
+    -0.000229
+   ],
+   "meshes": [
+    26,
+    27
+   ]
+  },
+  {
+   "name": "c_abdomen5",
+   "src": "abdomen_5",
+   "parent": 13,
+   "pos": [
+    0.0,
+    0.262,
+    0.0
+   ],
+   "quat": [
+    0.999,
+    -0.0368,
+    -4.7e-05,
+    -0.000327
+   ],
+   "meshes": [
+    28,
+    29
+   ]
+  },
+  {
+   "name": "c_abdomen6",
+   "src": "abdomen_6",
+   "parent": 14,
+   "pos": [
+    0.0,
+    0.213,
+    0.0
+   ],
+   "quat": [
+    0.998,
+    -0.0662,
+    0.000156,
+    -0.000351
+   ],
+   "meshes": [
+    30,
+    31
+   ]
+  },
+  {
+   "name": "c_abdomen7",
+   "src": "abdomen_7",
+   "parent": 15,
+   "pos": [
+    0.0,
+    0.182,
+    0.0
+   ],
+   "quat": [
+    0.995,
+    -0.102,
+    -2e-06,
+    -0.000187
+   ],
+   "meshes": [
+    32,
+    33,
+    34
+   ]
+  },
+  {
+   "name": "l_haltere",
+   "src": "haltere_left",
+   "parent": 0,
+   "pos": [
+    -0.386,
+    0.247,
+    -0.0866
+   ],
+   "quat": [
+    0.291,
+    -0.204,
+    0.826,
+    0.439
+   ],
+   "meshes": [
+    35
+   ]
+  },
+  {
+   "name": "r_haltere",
+   "src": "haltere_right",
+   "parent": 0,
+   "pos": [
+    -0.386,
+    -0.247,
+    -0.0866
+   ],
+   "quat": [
+    -0.438,
+    -0.829,
+    0.206,
+    -0.28
+   ],
+   "meshes": [
+    36
+   ]
+  },
+  {
+   "name": "lf_coxa",
+   "src": "coxa_T1_left",
+   "parent": 0,
+   "pos": [
+    0.317,
+    0.209,
+    -0.272
+   ],
+   "quat": [
+    -0.532,
+    0.787,
+    -0.311,
+    -0.0229
+   ],
+   "meshes": [
+    37
+   ]
+  },
+  {
+   "name": "lf_femur",
+   "src": "femur_T1_left",
+   "parent": 19,
+   "pos": [
+    0.0,
+    0.437,
+    0.0
+   ],
+   "quat": [
+    0.0,
+    0.0,
+    0.252,
+    0.968
+   ],
+   "meshes": [
+    38
+   ]
+  },
+  {
+   "name": "lf_tibia",
+   "src": "tibia_T1_left",
+   "parent": 20,
+   "pos": [
+    0.0,
+    0.697,
+    0.0
+   ],
+   "quat": [
+    0.186,
+    0.162,
+    0.677,
+    -0.694
+   ],
+   "meshes": [
+    39
+   ]
+  },
+  {
+   "name": "lf_tarsus1",
+   "src": "tarsus_T1_left",
+   "parent": 21,
+   "pos": [
+    0.0,
+    -0.51,
+    0.0175
+   ],
+   "quat": [
+    0.039,
+    0.998,
+    0.00674,
+    0.0474
+   ],
+   "meshes": [
+    40
+   ]
+  },
+  {
+   "name": "lf_tarsus2",
+   "src": "tarsus2_T1_left",
+   "parent": 22,
+   "pos": [
+    -0.00165,
+    0.235,
+    0.0174
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "meshes": [
+    41
+   ]
+  },
+  {
+   "name": "lf_tarsus3",
+   "src": "tarsus3_T1_left",
+   "parent": 23,
+   "pos": [
+    0.00113,
+    0.136,
+    0.00556
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "meshes": [
+    42
+   ]
+  },
+  {
+   "name": "lf_tarsus4",
+   "src": "tarsus4_T1_left",
+   "parent": 24,
+   "pos": [
+    -0.00255,
+    0.0909,
+    0.002
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "meshes": [
+    43
+   ]
+  },
+  {
+   "name": "lf_claw",
+   "src": "claw_T1_left",
+   "parent": 25,
+   "pos": [
+    -0.00071,
+    0.0906,
+    -0.0081
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "meshes": [
+    44
+   ]
+  },
+  {
+   "name": "rf_coxa",
+   "src": "coxa_T1_right",
+   "parent": 0,
+   "pos": [
+    0.317,
+    -0.209,
+    -0.272
+   ],
+   "quat": [
+    0.319,
+    0.011,
+    -0.543,
+    -0.777
+   ],
+   "meshes": [
+    45
+   ]
+  },
+  {
+   "name": "rf_femur",
+   "src": "femur_T1_right",
+   "parent": 27,
+   "pos": [
+    0.0,
+    -0.436,
+    0.0
+   ],
+   "quat": [
+    0.0,
+    0.0,
+    0.261,
+    0.965
+   ],
+   "meshes": [
+    46
+   ]
+  },
+  {
+   "name": "rf_tibia",
+   "src": "tibia_T1_right",
+   "parent": 28,
+   "pos": [
+    0.0,
+    -0.698,
+    0.0
+   ],
+   "quat": [
+    0.163,
+    0.148,
+    0.688,
+    -0.692
+   ],
+   "meshes": [
+    47
+   ]
+  },
+  {
+   "name": "rf_tarsus1",
+   "src": "tarsus_T1_right",
+   "parent": 29,
+   "pos": [
+    0.0,
+    0.515,
+    -0.0175
+   ],
+   "quat": [
+    -0.0745,
+    -0.995,
+    0.0133,
+    0.0704
+   ],
+   "meshes": [
+    48
+   ]
+  },
+  {
+   "name": "rf_tarsus2",
+   "src": "tarsus2_T1_right",
+   "parent": 30,
+   "pos": [
+    -0.00965,
+    -0.227,
+    -0.0161
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "meshes": [
+    49
+   ]
+  },
+  {
+   "name": "rf_tarsus3",
+   "src": "tarsus3_T1_right",
+   "parent": 31,
+   "pos": [
+    0.00143,
+    -0.136,
+    -0.0168
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "meshes": [
+    50
+   ]
+  },
+  {
+   "name": "rf_tarsus4",
+   "src": "tarsus4_T1_right",
+   "parent": 32,
+   "pos": [
+    0.00437,
+    -0.0899,
+    -0.0063
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "meshes": [
+    51
+   ]
+  },
+  {
+   "name": "rf_claw",
+   "src": "claw_T1_right",
+   "parent": 33,
+   "pos": [
+    0.00765,
+    -0.0899,
+    0.00134
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "meshes": [
+    52
+   ]
+  },
+  {
+   "name": "lm_coxa",
+   "src": "coxa_T2_left",
+   "parent": 0,
+   "pos": [
+    -0.144,
+    0.241,
+    -0.425
+   ],
+   "quat": [
+    -0.371,
+    0.917,
+    -0.126,
+    -0.0722
+   ],
+   "meshes": [
+    53
+   ]
+  },
+  {
+   "name": "lm_femur",
+   "src": "femur_T2_left",
+   "parent": 35,
+   "pos": [
+    0.0,
+    0.281,
+    0.0
+   ],
+   "quat": [
+    0.0,
+    0.0,
+    0.128,
+    0.992
+   ],
+   "meshes": [
+    54
+   ]
+  },
+  {
+   "name": "lm_tibia",
+   "src": "tibia_T2_left",
+   "parent": 36,
+   "pos": [
+    0.0,
+    0.83,
+    0.0
+   ],
+   "quat": [
+    0.107,
+    0.0834,
+    0.656,
+    -0.742
+   ],
+   "meshes": [
+    55
+   ]
+  },
+  {
+   "name": "lm_tarsus1",
+   "src": "tarsus_T2_left",
+   "parent": 37,
+   "pos": [
+    0.0,
+    -0.668,
+    0.0175
+   ],
+   "quat": [
+    -0.148,
+    0.978,
+    -0.0216,
+    -0.143
+   ],
+   "meshes": [
+    56
+   ]
+  },
+  {
+   "name": "lm_tarsus2",
+   "src": "tarsus2_T2_left",
+   "parent": 38,
+   "pos": [
+    0.00471,
+    0.342,
+    0.0136
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "meshes": [
+    57
+   ]
+  },
+  {
+   "name": "lm_tarsus3",
+   "src": "tarsus3_T2_left",
+   "parent": 39,
+   "pos": [
+    0.00024,
+    0.178,
+    0.00203
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "meshes": [
+    58
+   ]
+  },
+  {
+   "name": "lm_tarsus4",
+   "src": "tarsus4_T2_left",
+   "parent": 40,
+   "pos": [
+    -0.00031,
+    0.0991,
+    0.00292
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "meshes": [
+    59
+   ]
+  },
+  {
+   "name": "lm_claw",
+   "src": "claw_T2_left",
+   "parent": 41,
+   "pos": [
+    0.00036,
+    0.0991,
+    -0.00254
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "meshes": [
+    60
+   ]
+  },
+  {
+   "name": "rm_coxa",
+   "src": "coxa_T2_right",
+   "parent": 0,
+   "pos": [
+    -0.144,
+    -0.241,
+    -0.425
+   ],
+   "quat": [
+    0.126,
+    -0.0709,
+    -0.374,
+    -0.916
+   ],
+   "meshes": [
+    61
+   ]
+  },
+  {
+   "name": "rm_femur",
+   "src": "femur_T2_right",
+   "parent": 43,
+   "pos": [
+    0.0,
+    -0.282,
+    0.0
+   ],
+   "quat": [
+    0.0,
+    0.0,
+    0.134,
+    0.991
+   ],
+   "meshes": [
+    62
+   ]
+  },
+  {
+   "name": "rm_tibia",
+   "src": "tibia_T2_right",
+   "parent": 44,
+   "pos": [
+    0.0,
+    -0.84,
+    0.0
+   ],
+   "quat": [
+    0.0902,
+    0.103,
+    0.659,
+    -0.739
+   ],
+   "meshes": [
+    63
+   ]
+  },
+  {
+   "name": "rm_tarsus1",
+   "src": "tarsus_T2_right",
+   "parent": 45,
+   "pos": [
+    0.0,
+    0.665,
+    -0.0175
+   ],
+   "quat": [
+    0.15,
+    -0.982,
+    0.0172,
+    0.113
+   ],
+   "meshes": [
+    64
+   ]
+  },
+  {
+   "name": "rm_tarsus2",
+   "src": "tarsus2_T2_right",
+   "parent": 46,
+   "pos": [
+    -0.00367,
+    -0.339,
+    -0.0103
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "meshes": [
+    65
+   ]
+  },
+  {
+   "name": "rm_tarsus3",
+   "src": "tarsus3_T2_right",
+   "parent": 47,
+   "pos": [
+    0.00017,
+    -0.177,
+    -0.00553
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "meshes": [
+    66
+   ]
+  },
+  {
+   "name": "rm_tarsus4",
+   "src": "tarsus4_T2_right",
+   "parent": 48,
+   "pos": [
+    0.00051,
+    -0.0988,
+    -0.00293
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "meshes": [
+    67
+   ]
+  },
+  {
+   "name": "rm_claw",
+   "src": "claw_T2_right",
+   "parent": 49,
+   "pos": [
+    -0.00097,
+    -0.0988,
+    0.00252
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "meshes": [
+    68
+   ]
+  },
+  {
+   "name": "lh_coxa",
+   "src": "coxa_T3_left",
+   "parent": 0,
+   "pos": [
+    -0.377,
+    0.192,
+    -0.402
+   ],
+   "quat": [
+    0.681,
+    -0.529,
+    -0.0882,
+    0.498
+   ],
+   "meshes": [
+    69
+   ]
+  },
+  {
+   "name": "lh_femur",
+   "src": "femur_T3_left",
+   "parent": 51,
+   "pos": [
+    -0.0398,
+    0.232,
+    -0.0668
+   ],
+   "quat": [
+    0.0,
+    0.0,
+    -0.668,
+    -0.744
+   ],
+   "meshes": [
+    70
+   ]
+  },
+  {
+   "name": "lh_tibia",
+   "src": "tibia_T3_left",
+   "parent": 52,
+   "pos": [
+    0.0,
+    0.779,
+    0.0
+   ],
+   "quat": [
+    -0.117,
+    -0.104,
+    -0.711,
+    0.685
+   ],
+   "meshes": [
+    71
+   ]
+  },
+  {
+   "name": "lh_tarsus1",
+   "src": "tarsus_T3_left",
+   "parent": 53,
+   "pos": [
+    0.0,
+    -0.715,
+    0.0175
+   ],
+   "quat": [
+    -0.23,
+    0.963,
+    -0.033,
+    -0.138
+   ],
+   "meshes": [
+    72
+   ]
+  },
+  {
+   "name": "lh_tarsus2",
+   "src": "tarsus2_T3_left",
+   "parent": 54,
+   "pos": [
+    0.0027,
+    0.337,
+    0.0102
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "meshes": [
+    73
+   ]
+  },
+  {
+   "name": "lh_tarsus3",
+   "src": "tarsus3_T3_left",
+   "parent": 55,
+   "pos": [
+    -0.0008,
+    0.197,
+    0.0158
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "meshes": [
+    74
+   ]
+  },
+  {
+   "name": "lh_tarsus4",
+   "src": "tarsus4_T3_left",
+   "parent": 56,
+   "pos": [
+    0.0008,
+    0.111,
+    -0.00028
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "meshes": [
+    75
+   ]
+  },
+  {
+   "name": "lh_claw",
+   "src": "claw_T3_left",
+   "parent": 57,
+   "pos": [
+    0.00222,
+    0.111,
+    -0.0108
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "meshes": [
+    76
+   ]
+  },
+  {
+   "name": "rh_coxa",
+   "src": "coxa_T3_right",
+   "parent": 0,
+   "pos": [
+    -0.377,
+    -0.192,
+    -0.402
+   ],
+   "quat": [
+    -0.0854,
+    -0.505,
+    -0.673,
+    -0.534
+   ],
+   "meshes": [
+    77
+   ]
+  },
+  {
+   "name": "rh_femur",
+   "src": "femur_T3_right",
+   "parent": 59,
+   "pos": [
+    0.0383,
+    -0.232,
+    0.066
+   ],
+   "quat": [
+    0.0,
+    0.0,
+    0.661,
+    0.751
+   ],
+   "meshes": [
+    78
+   ]
+  },
+  {
+   "name": "rh_tibia",
+   "src": "tibia_T3_right",
+   "parent": 60,
+   "pos": [
+    0.0,
+    -0.77,
+    0.0
+   ],
+   "quat": [
+    -0.121,
+    -0.111,
+    -0.708,
+    0.686
+   ],
+   "meshes": [
+    79
+   ]
+  },
+  {
+   "name": "rh_tarsus1",
+   "src": "tarsus_T3_right",
+   "parent": 61,
+   "pos": [
+    0.0,
+    0.721,
+    -0.0175
+   ],
+   "quat": [
+    0.223,
+    -0.965,
+    0.0313,
+    0.136
+   ],
+   "meshes": [
+    80
+   ]
+  },
+  {
+   "name": "rh_tarsus2",
+   "src": "tarsus2_T3_right",
+   "parent": 62,
+   "pos": [
+    -0.0073,
+    -0.338,
+    -0.0122
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "meshes": [
+    81
+   ]
+  },
+  {
+   "name": "rh_tarsus3",
+   "src": "tarsus3_T3_right",
+   "parent": 63,
+   "pos": [
+    0.00185,
+    -0.197,
+    -0.0157
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "meshes": [
+    82
+   ]
+  },
+  {
+   "name": "rh_tarsus4",
+   "src": "tarsus4_T3_right",
+   "parent": 64,
+   "pos": [
+    0.0002,
+    -0.11,
+    0.00019
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "meshes": [
+    83
+   ]
+  },
+  {
+   "name": "rh_claw",
+   "src": "claw_T3_right",
+   "parent": 65,
+   "pos": [
+    0.00043,
+    -0.11,
+    0.0125
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "meshes": [
+    84
+   ]
+  }
+ ],
+ "meshes": [
+  {
+   "name": "thorax",
+   "material": "body",
+   "body": 0,
+   "vertexCount": 9158,
+   "indexCount": 54936,
+   "pos": 0,
+   "nor": 109896,
+   "idx": 137372
+  },
+  {
+   "name": "thorax_black",
+   "material": "black",
+   "body": 0,
+   "vertexCount": 12821,
+   "indexCount": 73974,
+   "pos": 357116,
+   "nor": 510968,
+   "idx": 549432
+  },
+  {
+   "name": "head",
+   "material": "body",
+   "body": 1,
+   "vertexCount": 5982,
+   "indexCount": 35880,
+   "pos": 845328,
+   "nor": 917112,
+   "idx": 935060
+  },
+  {
+   "name": "head_red",
+   "material": "red",
+   "body": 1,
+   "vertexCount": 29888,
+   "indexCount": 177912,
+   "pos": 1078580,
+   "nor": 1437236,
+   "idx": 1526900
+  },
+  {
+   "name": "head_ocelli",
+   "material": "ocelli",
+   "body": 1,
+   "vertexCount": 5958,
+   "indexCount": 35712,
+   "pos": 2238548,
+   "nor": 2310044,
+   "idx": 2327920
+  },
+  {
+   "name": "head_black",
+   "material": "black",
+   "body": 1,
+   "vertexCount": 12148,
+   "indexCount": 71940,
+   "pos": 2470768,
+   "nor": 2616544,
+   "idx": 2652988
+  },
+  {
+   "name": "rostrum",
+   "material": "body",
+   "body": 2,
+   "vertexCount": 2116,
+   "indexCount": 12684,
+   "pos": 2940748,
+   "nor": 2966140,
+   "idx": 2972488
+  },
+  {
+   "name": "rostrum_bristle-brown",
+   "material": "bristle-brown",
+   "body": 2,
+   "vertexCount": 1568,
+   "indexCount": 9240,
+   "pos": 3023224,
+   "nor": 3042040,
+   "idx": 3046744
+  },
+  {
+   "name": "haustellum",
+   "material": "body",
+   "body": 3,
+   "vertexCount": 1834,
+   "indexCount": 10992,
+   "pos": 3083704,
+   "nor": 3105712,
+   "idx": 3111216
+  },
+  {
+   "name": "haustellum_black",
+   "material": "black",
+   "body": 3,
+   "vertexCount": 1344,
+   "indexCount": 7920,
+   "pos": 3155184,
+   "nor": 3171312,
+   "idx": 3175344
+  },
+  {
+   "name": "labrum_left_lower",
+   "material": "lower",
+   "body": 4,
+   "vertexCount": 482,
+   "indexCount": 2880,
+   "pos": 3207024,
+   "nor": 3212808,
+   "idx": 3214256
+  },
+  {
+   "name": "labrum_right_lower",
+   "material": "lower",
+   "body": 5,
+   "vertexCount": 482,
+   "indexCount": 2880,
+   "pos": 3225776,
+   "nor": 3231560,
+   "idx": 3233008
+  },
+  {
+   "name": "antenna_left",
+   "material": "body",
+   "body": 6,
+   "vertexCount": 2066,
+   "indexCount": 12384,
+   "pos": 3244528,
+   "nor": 3269320,
+   "idx": 3275520
+  },
+  {
+   "name": "antenna_left_black",
+   "material": "black",
+   "body": 6,
+   "vertexCount": 872,
+   "indexCount": 5160,
+   "pos": 3325056,
+   "nor": 3335520,
+   "idx": 3338136
+  },
+  {
+   "name": "antenna_right",
+   "material": "body",
+   "body": 7,
+   "vertexCount": 2066,
+   "indexCount": 12384,
+   "pos": 3358776,
+   "nor": 3383568,
+   "idx": 3389768
+  },
+  {
+   "name": "antenna_right_black",
+   "material": "black",
+   "body": 7,
+   "vertexCount": 872,
+   "indexCount": 5160,
+   "pos": 3439304,
+   "nor": 3449768,
+   "idx": 3452384
+  },
+  {
+   "name": "wing_left_brown",
+   "material": "brown",
+   "body": 8,
+   "vertexCount": 3147,
+   "indexCount": 18684,
+   "pos": 3473024,
+   "nor": 3510788,
+   "idx": 3520232
+  },
+  {
+   "name": "wing_left_membrane",
+   "material": "membrane",
+   "body": 8,
+   "vertexCount": 252,
+   "indexCount": 1500,
+   "pos": 3594968,
+   "nor": 3597992,
+   "idx": 3598748
+  },
+  {
+   "name": "wing_right_brown",
+   "material": "brown",
+   "body": 9,
+   "vertexCount": 3147,
+   "indexCount": 18684,
+   "pos": 3604748,
+   "nor": 3642512,
+   "idx": 3651956
+  },
+  {
+   "name": "wing_right_membrane",
+   "material": "membrane",
+   "body": 9,
+   "vertexCount": 252,
+   "indexCount": 1500,
+   "pos": 3726692,
+   "nor": 3729716,
+   "idx": 3730472
+  },
+  {
+   "name": "abdomen_1",
+   "material": "body",
+   "body": 10,
+   "vertexCount": 764,
+   "indexCount": 4374,
+   "pos": 3736472,
+   "nor": 3745640,
+   "idx": 3747932
+  },
+  {
+   "name": "abdomen_1_lower",
+   "material": "lower",
+   "body": 10,
+   "vertexCount": 275,
+   "indexCount": 1440,
+   "pos": 3765428,
+   "nor": 3768728,
+   "idx": 3769556
+  },
+  {
+   "name": "abdomen_2",
+   "material": "body",
+   "body": 11,
+   "vertexCount": 343,
+   "indexCount": 1860,
+   "pos": 3775316,
+   "nor": 3779432,
+   "idx": 3780464
+  },
+  {
+   "name": "abdomen_2_lower",
+   "material": "lower",
+   "body": 11,
+   "vertexCount": 289,
+   "indexCount": 1536,
+   "pos": 3787904,
+   "nor": 3791372,
+   "idx": 3792240
+  },
+  {
+   "name": "abdomen_3",
+   "material": "body",
+   "body": 12,
+   "vertexCount": 409,
+   "indexCount": 2244,
+   "pos": 3798384,
+   "nor": 3803292,
+   "idx": 3804520
+  },
+  {
+   "name": "abdomen_3_lower",
+   "material": "lower",
+   "body": 12,
+   "vertexCount": 339,
+   "indexCount": 1824,
+   "pos": 3813496,
+   "nor": 3817564,
+   "idx": 3818584
+  },
+  {
+   "name": "abdomen_4",
+   "material": "body",
+   "body": 13,
+   "vertexCount": 409,
+   "indexCount": 2244,
+   "pos": 3825880,
+   "nor": 3830788,
+   "idx": 3832016
+  },
+  {
+   "name": "abdomen_4_lower",
+   "material": "lower",
+   "body": 13,
+   "vertexCount": 339,
+   "indexCount": 1824,
+   "pos": 3840992,
+   "nor": 3845060,
+   "idx": 3846080
+  },
+  {
+   "name": "abdomen_5",
+   "material": "body",
+   "body": 14,
+   "vertexCount": 405,
+   "indexCount": 2196,
+   "pos": 3853376,
+   "nor": 3858236,
+   "idx": 3859452
+  },
+  {
+   "name": "abdomen_5_lower",
+   "material": "lower",
+   "body": 14,
+   "vertexCount": 367,
+   "indexCount": 1968,
+   "pos": 3868236,
+   "nor": 3872640,
+   "idx": 3873744
+  },
+  {
+   "name": "abdomen_6",
+   "material": "body",
+   "body": 15,
+   "vertexCount": 409,
+   "indexCount": 2244,
+   "pos": 3881616,
+   "nor": 3886524,
+   "idx": 3887752
+  },
+  {
+   "name": "abdomen_6_lower",
+   "material": "lower",
+   "body": 15,
+   "vertexCount": 339,
+   "indexCount": 1824,
+   "pos": 3896728,
+   "nor": 3900796,
+   "idx": 3901816
+  },
+  {
+   "name": "abdomen_8",
+   "material": "body",
+   "body": 16,
+   "vertexCount": 845,
+   "indexCount": 5058,
+   "pos": 3909112,
+   "nor": 3919252,
+   "idx": 3921788
+  },
+  {
+   "name": "abdomen_7",
+   "material": "body",
+   "body": 16,
+   "vertexCount": 409,
+   "indexCount": 2244,
+   "pos": 3942020,
+   "nor": 3946928,
+   "idx": 3948156
+  },
+  {
+   "name": "abdomen_7_lower",
+   "material": "lower",
+   "body": 16,
+   "vertexCount": 339,
+   "indexCount": 1824,
+   "pos": 3957132,
+   "nor": 3961200,
+   "idx": 3962220
+  },
+  {
+   "name": "haltere_left",
+   "material": "body",
+   "body": 17,
+   "vertexCount": 626,
+   "indexCount": 3744,
+   "pos": 3969516,
+   "nor": 3977028,
+   "idx": 3978908
+  },
+  {
+   "name": "haltere_right",
+   "material": "body",
+   "body": 18,
+   "vertexCount": 626,
+   "indexCount": 3744,
+   "pos": 3993884,
+   "nor": 4001396,
+   "idx": 4003276
+  },
+  {
+   "name": "coxa_T1_left",
+   "material": "body",
+   "body": 19,
+   "vertexCount": 1118,
+   "indexCount": 6696,
+   "pos": 4018252,
+   "nor": 4031668,
+   "idx": 4035024
+  },
+  {
+   "name": "femur_T1_left",
+   "material": "body",
+   "body": 20,
+   "vertexCount": 1076,
+   "indexCount": 6444,
+   "pos": 4061808,
+   "nor": 4074720,
+   "idx": 4077948
+  },
+  {
+   "name": "tibia_T1_left",
+   "material": "body",
+   "body": 21,
+   "vertexCount": 497,
+   "indexCount": 2970,
+   "pos": 4103724,
+   "nor": 4109688,
+   "idx": 4111180
+  },
+  {
+   "name": "tarsus_T1_1_left",
+   "material": "body",
+   "body": 22,
+   "vertexCount": 337,
+   "indexCount": 1968,
+   "pos": 4123060,
+   "nor": 4127104,
+   "idx": 4128116
+  },
+  {
+   "name": "tarsus_T1_2_left",
+   "material": "body",
+   "body": 23,
+   "vertexCount": 305,
+   "indexCount": 1776,
+   "pos": 4135988,
+   "nor": 4139648,
+   "idx": 4140564
+  },
+  {
+   "name": "tarsus_T1_3_left",
+   "material": "body",
+   "body": 24,
+   "vertexCount": 305,
+   "indexCount": 1776,
+   "pos": 4147668,
+   "nor": 4151328,
+   "idx": 4152244
+  },
+  {
+   "name": "tarsus_T1_4_left",
+   "material": "body",
+   "body": 25,
+   "vertexCount": 305,
+   "indexCount": 1776,
+   "pos": 4159348,
+   "nor": 4163008,
+   "idx": 4163924
+  },
+  {
+   "name": "tarsal_claw_T1_left_brown",
+   "material": "brown",
+   "body": 26,
+   "vertexCount": 799,
+   "indexCount": 4728,
+   "pos": 4171028,
+   "nor": 4180616,
+   "idx": 4183016
+  },
+  {
+   "name": "coxa_T1_right",
+   "material": "body",
+   "body": 27,
+   "vertexCount": 1118,
+   "indexCount": 6696,
+   "pos": 4201928,
+   "nor": 4215344,
+   "idx": 4218700
+  },
+  {
+   "name": "femur_T1_right",
+   "material": "body",
+   "body": 28,
+   "vertexCount": 1076,
+   "indexCount": 6444,
+   "pos": 4245484,
+   "nor": 4258396,
+   "idx": 4261624
+  },
+  {
+   "name": "tibia_T1_right",
+   "material": "body",
+   "body": 29,
+   "vertexCount": 497,
+   "indexCount": 2970,
+   "pos": 4287400,
+   "nor": 4293364,
+   "idx": 4294856
+  },
+  {
+   "name": "tarsus_T1_1_right",
+   "material": "body",
+   "body": 30,
+   "vertexCount": 337,
+   "indexCount": 1968,
+   "pos": 4306736,
+   "nor": 4310780,
+   "idx": 4311792
+  },
+  {
+   "name": "tarsus_T1_2_right",
+   "material": "body",
+   "body": 31,
+   "vertexCount": 305,
+   "indexCount": 1776,
+   "pos": 4319664,
+   "nor": 4323324,
+   "idx": 4324240
+  },
+  {
+   "name": "tarsus_T1_3_right",
+   "material": "body",
+   "body": 32,
+   "vertexCount": 305,
+   "indexCount": 1776,
+   "pos": 4331344,
+   "nor": 4335004,
+   "idx": 4335920
+  },
+  {
+   "name": "tarsus_T1_4_right",
+   "material": "body",
+   "body": 33,
+   "vertexCount": 305,
+   "indexCount": 1776,
+   "pos": 4343024,
+   "nor": 4346684,
+   "idx": 4347600
+  },
+  {
+   "name": "tarsal_claw_T1_right_brown",
+   "material": "brown",
+   "body": 34,
+   "vertexCount": 799,
+   "indexCount": 4728,
+   "pos": 4354704,
+   "nor": 4364292,
+   "idx": 4366692
+  },
+  {
+   "name": "coxa_T2_left",
+   "material": "body",
+   "body": 35,
+   "vertexCount": 1276,
+   "indexCount": 7644,
+   "pos": 4385604,
+   "nor": 4400916,
+   "idx": 4404744
+  },
+  {
+   "name": "femur_T2_left",
+   "material": "body",
+   "body": 36,
+   "vertexCount": 1490,
+   "indexCount": 8928,
+   "pos": 4435320,
+   "nor": 4453200,
+   "idx": 4457672
+  },
+  {
+   "name": "tibia_T2_left",
+   "material": "body",
+   "body": 37,
+   "vertexCount": 627,
+   "indexCount": 3750,
+   "pos": 4493384,
+   "nor": 4500908,
+   "idx": 4502792
+  },
+  {
+   "name": "tarsus_T2_1_left",
+   "material": "body",
+   "body": 38,
+   "vertexCount": 569,
+   "indexCount": 3360,
+   "pos": 4517792,
+   "nor": 4524620,
+   "idx": 4526328
+  },
+  {
+   "name": "tarsus_T2_2_left",
+   "material": "body",
+   "body": 39,
+   "vertexCount": 401,
+   "indexCount": 2352,
+   "pos": 4539768,
+   "nor": 4544580,
+   "idx": 4545784
+  },
+  {
+   "name": "tarsus_T2_3_left",
+   "material": "body",
+   "body": 40,
+   "vertexCount": 337,
+   "indexCount": 1968,
+   "pos": 4555192,
+   "nor": 4559236,
+   "idx": 4560248
+  },
+  {
+   "name": "tarsus_T2_4_left",
+   "material": "body",
+   "body": 41,
+   "vertexCount": 305,
+   "indexCount": 1776,
+   "pos": 4568120,
+   "nor": 4571780,
+   "idx": 4572696
+  },
+  {
+   "name": "tarsal_claw_T2_left_brown",
+   "material": "brown",
+   "body": 42,
+   "vertexCount": 839,
+   "indexCount": 4968,
+   "pos": 4579800,
+   "nor": 4589868,
+   "idx": 4592388
+  },
+  {
+   "name": "coxa_T2_right",
+   "material": "body",
+   "body": 43,
+   "vertexCount": 1276,
+   "indexCount": 7644,
+   "pos": 4612260,
+   "nor": 4627572,
+   "idx": 4631400
+  },
+  {
+   "name": "femur_T2_right",
+   "material": "body",
+   "body": 44,
+   "vertexCount": 1490,
+   "indexCount": 8928,
+   "pos": 4661976,
+   "nor": 4679856,
+   "idx": 4684328
+  },
+  {
+   "name": "tibia_T2_right",
+   "material": "body",
+   "body": 45,
+   "vertexCount": 627,
+   "indexCount": 3750,
+   "pos": 4720040,
+   "nor": 4727564,
+   "idx": 4729448
+  },
+  {
+   "name": "tarsus_T2_1_right",
+   "material": "body",
+   "body": 46,
+   "vertexCount": 569,
+   "indexCount": 3360,
+   "pos": 4744448,
+   "nor": 4751276,
+   "idx": 4752984
+  },
+  {
+   "name": "tarsus_T2_2_right",
+   "material": "body",
+   "body": 47,
+   "vertexCount": 401,
+   "indexCount": 2352,
+   "pos": 4766424,
+   "nor": 4771236,
+   "idx": 4772440
+  },
+  {
+   "name": "tarsus_T2_3_right",
+   "material": "body",
+   "body": 48,
+   "vertexCount": 337,
+   "indexCount": 1968,
+   "pos": 4781848,
+   "nor": 4785892,
+   "idx": 4786904
+  },
+  {
+   "name": "tarsus_T2_4_right",
+   "material": "body",
+   "body": 49,
+   "vertexCount": 305,
+   "indexCount": 1776,
+   "pos": 4794776,
+   "nor": 4798436,
+   "idx": 4799352
+  },
+  {
+   "name": "tarsal_claw_T2_right_brown",
+   "material": "brown",
+   "body": 50,
+   "vertexCount": 839,
+   "indexCount": 4968,
+   "pos": 4806456,
+   "nor": 4816524,
+   "idx": 4819044
+  },
+  {
+   "name": "coxa_T3_left",
+   "material": "body",
+   "body": 51,
+   "vertexCount": 968,
+   "indexCount": 5796,
+   "pos": 4838916,
+   "nor": 4850532,
+   "idx": 4853436
+  },
+  {
+   "name": "femur_T3_left",
+   "material": "body",
+   "body": 52,
+   "vertexCount": 1538,
+   "indexCount": 9216,
+   "pos": 4876620,
+   "nor": 4895076,
+   "idx": 4899692
+  },
+  {
+   "name": "tibia_T3_left",
+   "material": "body",
+   "body": 53,
+   "vertexCount": 1131,
+   "indexCount": 6774,
+   "pos": 4936556,
+   "nor": 4950128,
+   "idx": 4953524
+  },
+  {
+   "name": "tarsus_T3_1_left",
+   "material": "body",
+   "body": 54,
+   "vertexCount": 799,
+   "indexCount": 4740,
+   "pos": 4980620,
+   "nor": 4990208,
+   "idx": 4992608
+  },
+  {
+   "name": "tarsus_T3_2_left",
+   "material": "body",
+   "body": 55,
+   "vertexCount": 465,
+   "indexCount": 2736,
+   "pos": 5011568,
+   "nor": 5017148,
+   "idx": 5018544
+  },
+  {
+   "name": "tarsus_T3_3_left",
+   "material": "body",
+   "body": 56,
+   "vertexCount": 337,
+   "indexCount": 1968,
+   "pos": 5029488,
+   "nor": 5033532,
+   "idx": 5034544
+  },
+  {
+   "name": "tarsus_T3_4_left",
+   "material": "body",
+   "body": 57,
+   "vertexCount": 337,
+   "indexCount": 1968,
+   "pos": 5042416,
+   "nor": 5046460,
+   "idx": 5047472
+  },
+  {
+   "name": "tarsal_claw_T3_left_brown",
+   "material": "brown",
+   "body": 58,
+   "vertexCount": 919,
+   "indexCount": 5448,
+   "pos": 5055344,
+   "nor": 5066372,
+   "idx": 5069132
+  },
+  {
+   "name": "coxa_T3_right",
+   "material": "body",
+   "body": 59,
+   "vertexCount": 968,
+   "indexCount": 5796,
+   "pos": 5090924,
+   "nor": 5102540,
+   "idx": 5105444
+  },
+  {
+   "name": "femur_T3_right",
+   "material": "body",
+   "body": 60,
+   "vertexCount": 1538,
+   "indexCount": 9216,
+   "pos": 5128628,
+   "nor": 5147084,
+   "idx": 5151700
+  },
+  {
+   "name": "tibia_T3_right",
+   "material": "body",
+   "body": 61,
+   "vertexCount": 1131,
+   "indexCount": 6774,
+   "pos": 5188564,
+   "nor": 5202136,
+   "idx": 5205532
+  },
+  {
+   "name": "tarsus_T3_1_right",
+   "material": "body",
+   "body": 62,
+   "vertexCount": 799,
+   "indexCount": 4740,
+   "pos": 5232628,
+   "nor": 5242216,
+   "idx": 5244616
+  },
+  {
+   "name": "tarsus_T3_2_right",
+   "material": "body",
+   "body": 63,
+   "vertexCount": 465,
+   "indexCount": 2736,
+   "pos": 5263576,
+   "nor": 5269156,
+   "idx": 5270552
+  },
+  {
+   "name": "tarsus_T3_3_right",
+   "material": "body",
+   "body": 64,
+   "vertexCount": 337,
+   "indexCount": 1968,
+   "pos": 5281496,
+   "nor": 5285540,
+   "idx": 5286552
+  },
+  {
+   "name": "tarsus_T3_4_right",
+   "material": "body",
+   "body": 65,
+   "vertexCount": 337,
+   "indexCount": 1968,
+   "pos": 5294424,
+   "nor": 5298468,
+   "idx": 5299480
+  },
+  {
+   "name": "tarsal_claw_T3_right_brown",
+   "material": "brown",
+   "body": 66,
+   "vertexCount": 919,
+   "indexCount": 5448,
+   "pos": 5307352,
+   "nor": 5318380,
+   "idx": 5321140
+  }
+ ]
+}

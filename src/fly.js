@@ -18,7 +18,7 @@ const damp = (rate, dt) => 1 - Math.exp(-rate * dt);
 // Geometry of the flight volume
 // ---------------------------------------------------------------------------
 
-const WALL_CLEAR = 0.3; // how close the body centre may get to the glass while flying
+const WALL_CLEAR = 0.38; // how close the body centre may get to the glass while flying
 const FLOOR_REST = JAR.FLOOR_Y + BODY_H; // body centre height when standing on the floor
 const Y_MIN = JAR.FLOOR_Y + BODY_H * 0.65;
 const Y_MAX = 2.5;
@@ -62,7 +62,8 @@ export class Fly {
   constructor(assets) {
     this.model = buildFlyModel(assets);
     this.object = this.model.root;
-    this.hitRadius = 0.34;
+    this.hitRadius = 0.32;
+    this.headNod = 0;
 
     this.pos = new V3(0.15, 1.5, 0.2);
     this.vel = new V3(0.6, 0.2, -0.3);
@@ -291,10 +292,8 @@ export class Fly {
       this.perchN.set(0, 1, 0);
       this.perchKind = 'floor';
     } else {
-      // The sticker sits low on the front; keep out of its way there so the fly stays visible.
       const y = rand(0.4, 2.1);
-      let theta = rand(-Math.PI, Math.PI);
-      if (y < 1.15) theta = (Math.random() < 0.5 ? -1 : 1) * rand(1.1, 2.0);
+      const theta = rand(-Math.PI, Math.PI);
       p.set(Math.sin(theta), 0, Math.cos(theta)).multiplyScalar(innerRadiusAt(y) - BODY_H);
       p.y = y;
       this.perchN.set(-Math.sin(theta), 0, -Math.cos(theta));
@@ -535,7 +534,8 @@ export class Fly {
     m.root.quaternion.copy(this.quat);
 
     // Head tilts down while grooming; bobs a little in flight.
-    m.head.rotation.x += (this.cleanBlend * 0.3 - m.head.rotation.x) * damp(12, dt);
+    this.headNod += (this.cleanBlend * 0.3 - this.headNod) * damp(12, dt);
+    m.setHead(this.headNod, 0);
     m.body.position.y = flying ? Math.sin(this.time * 47) * 0.0025 : 0;
 
     this.poseWings(dt);
@@ -573,10 +573,10 @@ export class Fly {
       w.node.visible = w.ghost === 0 || blur;
       const sweep = drive * (0.35 + 0.85 * sin + w.ghost);
       const heave = drive * 0.32 * cos;
-      _qf.copy(IDENTITY).slerp(w.rest, this.wingFold); // spread -> folded over the back
+      _qf.copy(IDENTITY).slerp(w.fold, this.wingFold); // spread -> folded over the back
       _qy.setFromAxisAngle(AX_Y, w.side * sweep);
       _qz.setFromAxisAngle(AX_Z, w.side * heave);
-      w.node.quaternion.copy(_qz).multiply(_qy).multiply(_qf);
+      w.node.quaternion.copy(_qz).multiply(_qy).multiply(_qf).multiply(w.spread);
     }
   }
 
@@ -600,10 +600,10 @@ export class Fly {
         leg.stepT = Math.min(1, leg.stepT + dt / 0.11);
         const t = leg.stepT;
         leg.planted.lerpVectors(leg.stepFrom, leg.stepTo, t * t * (3 - 2 * t));
-        leg.planted.addScaledVector(this.perchN, Math.sin(Math.PI * t) * 0.045);
-      } else if (leg.planted.distanceTo(_a) > 0.075 && !stepping[1 - leg.group] && this.state === 'perch') {
+        leg.planted.addScaledVector(this.perchN, Math.sin(Math.PI * t) * 0.035);
+      } else if (leg.planted.distanceTo(_a) > 0.06 && !stepping[1 - leg.group] && this.state === 'perch') {
         leg.stepFrom.copy(leg.planted);
-        leg.stepTo.copy(_a).addScaledVector(_b.copy(this.perchFwd), 0.035);
+        leg.stepTo.copy(_a).addScaledVector(_b.copy(this.perchFwd), 0.03);
         leg.stepT = 0;
         stepping[leg.group] = true;
       }
@@ -629,7 +629,7 @@ export class Fly {
       // Front legs rub together while grooming.
       if (leg.idx === 0 && this.cleanBlend > 0.01) {
         const ph = this.time * 9 + (leg.side > 0 ? 0 : Math.PI);
-        _b.set(leg.side * (0.03 + 0.025 * Math.sin(ph)), -0.045, 0.23 + 0.025 * Math.cos(ph));
+        _b.set(leg.side * (0.02 + 0.02 * Math.sin(ph)), m.groom.y, m.groom.z + 0.02 * Math.cos(ph));
         _goal.lerp(_b, this.cleanBlend);
       }
 

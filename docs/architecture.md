@@ -12,11 +12,12 @@ flowchart LR
     side[Сайдкар мозга<br/>data/brain/brain, C++]
     main <-->|stdin/stdout<br/>текстовый протокол| side
     data[(graph.bin<br/>groups.txt)] --> side
-    assets[(assets/fly<br/>39 STL + rig.json)] -->|asset:read| main
+    assets[(assets/fly/flybody<br/>rig.json + meshes.bin)] -->|asset:read| main
 ```
 
 - **Главный процесс** (`main.js`) создаёт окно, меню и файл настроек, поддерживает один экземпляр
-  приложения, запускает и останавливает мозг через `brain-host.js`, обслуживает IPC.
+  приложения, запускает и останавливает мозг через `brain-host.js`, обслуживает IPC и масштаб окна. Всё, что зависит
+  от системы (слой окна «на обоях»), вынесено в `platform.js`.
 - **Рендерер** (`src/index.html` + модули `src/*.js`) строит сцену Three.js, читает мышь, ведёт главный
   цикл кадра и синтезирует звук. Работает с `contextIsolation: true` и без `nodeIntegration`: единственный
   канал наружу - объект `window.widget` из `preload.js`.
@@ -47,7 +48,7 @@ flowchart TD
     brainfly --> jar
 ```
 
-Ассеты (STL-меши и `rig.json`) рендерер получает через IPC `asset:read`, а не через `fetch`: `fetch` по
+Ассеты мухи (`rig.json` и `meshes.bin`) рендерер получает через IPC `asset:read`, а не через `fetch`: `fetch` по
 `file://` в рендерере ненадёжен, а `readAsset` ещё и проверяет, что путь не выходит за каталог `assets/`.
 
 Three.js подключается import map'ом в `index.html`:
@@ -69,7 +70,7 @@ scene
 ├─ key light (DirectionalLight), fill (HemisphereLight)  -- на слоях 0 и 1
 ├─ jar.root                        наклон банки: pitch и roll вокруг центра основания
 │  ├─ jar.spin                     вращение банки вокруг оси (yaw)
-│  │   ├─ 4 стеклянных оболочки, крышка, этикетка
+│  │   ├─ 4 стеклянных оболочки, крышка
 │  └─ jar.inner                    всё, что живёт внутри банки (муха)
 │      └─ fly.object               позиция и ориентация мухи
 └─ jar.shadow                      мягкая тень на «столе», не наклоняется
@@ -120,18 +121,24 @@ scene
 
 | Метод `window.widget` | Канал | Тип | Что делает |
 | --- | --- | --- | --- |
-| `getSettings()` | `settings:get` | invoke | Возвращает `{ sound, size, brain: { available, enabled, running, error } }`. |
+| `getSettings()` | `settings:get` | invoke | Возвращает `{ sound, scale, brain: { available, enabled, running, error } }`. |
 | `onSettings(cb)` | `settings:changed` (главный → рендерер) | событие | Уведомляет об изменениях из меню (звук, мозг). |
 | `readAsset(path)` | `asset:read` | invoke | Читает файл из `assets/`, возвращает `Uint8Array`. |
 | `brainInfo()` | `brain:info` | invoke | Сведения о запущенном мозге (`sizes` групп, число нейронов и связей) или `null`. |
 | `brainStep(drives, ms)` | `brain:step` | invoke | Устанавливает токи на группы, продвигает симуляцию на `ms` и возвращает счётчики спайков по группам. |
 | `brainNoise(groups, rate)` | `brain:noise` | invoke | Постоянный пуассоновский шум на группах. |
+| `zoom(factor)` | `widget:zoom` | send | Умножает масштаб окна на `factor` (колесо мыши); главный процесс копит множители 16 мс, зажимает их в 0,5-2 за раз, а итог - в 0,5-3 и в размер экрана. |
 | `showMenu()` | `widget:menu` | send | Показывает нативное меню (в режиме скриншота не открывается). |
 | `dragStart()`, `dragMove(dx, dy)`, `dragEnd()` | `widget:drag-*` | send | Перемещение окна за крышку; см. ниже. |
 
 Перемещение окна делается через `setBounds` с исходными шириной и высотой, а не через `setPosition`: у
 безрамочного прозрачного окна на Linux иначе размер «плывёт» во время перетаскивания. Позиция сохраняется в
 настройки при отпускании.
+
+Масштаб (`applyScale` в `main.js`) тоже меняет окно через `setBounds`: новая ширина и высота берутся из базового
+размера 360×500 (`BASE`), а левый верхний угол пересчитывается так, чтобы середина нижней кромки осталась на месте.
+Рендерер узнаёт о новом размере из обычного события `resize` и перестраивает буферы кадра (в том числе `innerRT`,
+см. [rendering](rendering.md)).
 
 ## Связь с мозгом в цикле
 
@@ -157,7 +164,8 @@ sequenceDiagram
 
 ## Окно и слои
 
-Параметры окна и тип `desktop` описаны в [launch_modes](launch_modes.md). Клики по прозрачным участкам окна
+Параметры окна, слои и то, как слой `desktop` реализован на Linux и Windows, описаны в
+[launch_modes](launch_modes.md) и [windows](windows.md). Клики по прозрачным участкам окна
 не проходят сквозь него: по документации Electron пересылка событий (`forward`) для сквозных окон
 поддерживается только на macOS и Windows, поэтому на Linux динамически переключать «сквозные» области
 нельзя. Окно сделано вплотную по размеру банки, а `pick()` игнорирует клики мимо банки: без

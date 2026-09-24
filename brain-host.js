@@ -9,12 +9,12 @@ const path = require('path');
 
 const DATA = path.join(__dirname, 'data', 'brain');
 const FILES = {
-  binary: path.join(DATA, 'brain'),
+  binary: path.join(DATA, process.platform === 'win32' ? 'brain.exe' : 'brain'),
   graph: path.join(DATA, 'graph.bin'),
   groups: path.join(DATA, 'groups.txt'),
 };
 
-/** Is the connectome set up? (tools/setup_brain.sh builds it.) */
+/** Is the connectome set up? (npm run brain:setup builds it.) */
 function available() {
   return Object.values(FILES).every((f) => fs.existsSync(f));
 }
@@ -33,7 +33,7 @@ class BrainHost {
 
   start() {
     return new Promise((resolve, reject) => {
-      const proc = spawn(FILES.binary, ['--graph', FILES.graph, '--groups', FILES.groups], { stdio: ['pipe', 'pipe', 'inherit'] });
+      const proc = spawn(FILES.binary, ['--graph', FILES.graph, '--groups', FILES.groups], { stdio: ['pipe', 'pipe', 'inherit'], windowsHide: true });
       this.proc = proc;
       proc.on('error', reject);
       proc.on('exit', () => {

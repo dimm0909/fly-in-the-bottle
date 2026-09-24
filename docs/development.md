@@ -3,41 +3,44 @@
 ## Структура проекта
 
 ```text
-main.js                     # Electron: окно, меню, настройки, IPC, режим скриншота
+main.js                     # Electron: окно, меню, настройки, масштаб, IPC, режим скриншота
+platform.js                 # слой окна «на обоях»: Linux (тип desktop) и Windows (SetWindowPos через koffi)
 preload.js                  # мост window.widget между рендерером и главным процессом
 brain-host.js               # процесс-хозяин сайдкара мозга и его протокол
-package.json                # npm-скрипты
+package.json                # npm-скрипты (все идут через tools/dev.js)
 src/
   index.html                # страница, import map, CSP
-  app.js                    # сцена, мышь, главный цикл кадра
-  jar.js                    # банка, шейдер стекла, крышка, этикетка, тень
+  app.js                    # сцена, мышь, колесо, главный цикл кадра
+  jar.js                    # банка, шейдер стекла, крышка, тень
   env.js                    # процедурная «студия»: отражения (GLSL + PMREM)
-  flymodel.js               # тело мухи: меши, скелет, IK ног
+  flymodel.js               # тело мухи: меши FlyBody, скелет, IK ног
   fly.js                    # сценарная муха и общая механика (столкновения, поза, звук)
   brainfly.js               # муха с мозгом
   brainlink.js              # связь рендерера с сайдкаром
   motion.js                 # физика банки как целого
   audio.js                  # синтез звука
-assets/fly/
-  meshes/*.stl              # 39 мешей NeuroMechFly v2 (Apache-2.0)
-  rig.json                  # скелет, собранный из rigging.yaml
-  LICENSE-flygym.txt        # лицензия мешей
+assets/fly/flybody/
+  rig.json                  # 67 тел, 85 мешей, материалы (собран из FlyBody)
+  meshes.bin                # вершины, нормали, индексы всех мешей (5,3 МБ)
+  LICENSE-flybody.txt       # лицензия FlyBody (Apache-2.0)
+  NOTICE.md                 # откуда данные и что с ними сделано
 brain/
   brain.h                   # интерфейс Backend, Params, Graph, Group
   cpu.cpp                   # загрузка графа и групп, CpuBackend (событийный)
   main.cpp                  # протокол stdin/stdout
-  Makefile                  # собирает data/brain/brain
+  Makefile                  # необязательно: make -C brain (то же делает npm run brain:compile)
 tools/
-  setup_brain.sh            # загрузка данных и сборка мозга одной командой
+  dev.js                    # запуск, загрузка данных, сборка мозга, документация; на любой системе
   build_brain_graph.py      # граф data/brain/graph.bin и neurons.feather
   build_groups.py           # именованные группы нейронов data/brain/groups.txt
-  build_fly_rig.py          # assets/fly/rig.json из data/nmf/rigging.yaml
+  build_fly_flybody.py      # assets/fly/flybody из клона FlyBody (data/flybody)
+  probe_flybody.py          # контрольные проекции позы покоя FlyBody
   brain_client.py           # Python-клиент сайдкара для исследований и тестов
   check_brain.py            # проверки сайдкара (npm run brain:check)
   bench_brain.py            # замер стоимости счёта
-  explore/                  # эксперименты калибровки (explore1.py ... explore10.py)
+  explore/                  # эксперименты калибровки (explore1.py ... explore11.py)
 docs/                       # эта документация (Sphinx)
-data/                       # git-ignored: данные MaleCNS, граф, бинарник мозга, скелет NeuroMechFly
+data/                       # git-ignored: данные MaleCNS, граф, бинарник мозга, клон FlyBody
 shots/                      # git-ignored: кадры режима --shot
 .venv/                      # git-ignored: окружение Python
 ```
@@ -51,7 +54,7 @@ shots/                      # git-ignored: кадры режима --shot
 
 ```bash
 npm run brain:check                       # контроль поведения сайдкара (9 проверок)
-.venv/bin/python tools/bench_brain.py     # стоимость счёта в нескольких режимах
+.venv/bin/python tools/bench_brain.py     # стоимость счёта в нескольких режимах (Windows: node tools/dev.js py tools/bench_brain.py)
 ```
 
 После правок `brain/`, параметров модели или правил групп проверьте оба. Если менялось усиление, адаптация
@@ -65,7 +68,8 @@ npm run brain:check                       # контроль поведения 
 
 | Что проверить | Как |
 | --- | --- |
-| Внешний вид | `--shot=out.png --delay=800`, при необходимости `--script` с позой мухи, затем просмотр PNG на светлом и тёмном фоне |
+| Внешний вид | `npm run shot -- --shot=out.png --delay=800`, при необходимости `--script` с позой мухи, затем просмотр PNG на светлом и тёмном фоне |
+| Масштаб | В скрипте `window.widget.zoom(1.5); await sleep(600)`; размер окна печатает `bounds: {...}` (в `--shot` окно за экраном не зажимается в рабочую область) |
 | Тычок в часть тела | `w.fly.touch('lf_tibia', 0.3)`; смотреть `w.fly.power`, `w.fly.state`, `leg.twitch` за 1-2 секунды |
 | Приближающийся курсор | `w.fly.threat.strength = 1; w.fly.threat.side = 'R'` каждые 30 мс |
 | Покой | 30 с без событий: муха должна стоять неподвижно (фоновый шум инертен, см. [brain_model](brain_model.md)) |
@@ -126,11 +130,23 @@ npm run docs                       # полная пересборка
 `.venv/bin/python tools/build_brain_graph.py --min-syn 3` (по умолчанию 5). Правило знаков - словарь `SIGN` в
 скрипте. После пересборки нужно заново пройти калибровку: общее усиление зависит от плотности графа.
 
-### Другое тело
+### Другое тело или обновить FlyBody
 
-Замените или дополните меши в `assets/fly/meshes/`, положите соответствующий `rigging.yaml` в `data/nmf/` и
-выполните `.venv/bin/python tools/build_fly_rig.py`. Позы стойки и полёта (`STANCE`, `TUCK`), масштаб (`MM`) и
-высота тела (`GROUND_MM`) лежат в `src/flymodel.js`.
+```bash
+git clone --depth 1 https://github.com/TuragaLab/flybody.git data/flybody
+.venv/bin/python tools/build_fly_flybody.py          # переписывает assets/fly/flybody/{rig.json,meshes.bin}
+```
+
+Сборщик читает `fruitfly.xml` и OBJ-файлы, склеивает вершины, ничего не упрощает и записывает `groundMM`: расстояние от
+начала координат груди до низа когтей в позе покоя. Если оно изменилось, поправьте `GROUND_MM` в `src/flymodel.js`
+(там же масштаб `MM`, углы складывания крыла `FOLD_YAW`, `FOLD_ROLL`). Для другого источника тел нужны те же имена
+(`c_thorax`, `c_head`, `c_abdomen1…7`, `l_wing`, `lf_coxa`, `lf_femur`, `lf_tibia`, `lf_tarsus1…4`, `lf_claw`, …): на
+них опирается остальной код. Контрольные проекции: `.venv/bin/python tools/probe_flybody.py` (нужен `matplotlib`).
+
+### Слой окна на новой платформе
+
+Слой задают только две функции `platform.js`: `windowOptions(layer)` (опции конструктора) и `applyLayer(win, layer)`
+(остальное). Добавьте ветку для платформы там; `main.js` трогать не нужно.
 
 ## Подводные камни
 
@@ -138,14 +154,16 @@ npm run docs                       # полная пересборка
 
 | Проблема | Причина и что делать |
 | --- | --- |
-| `TypeError … reading 'handle'`, вывод про `Node.js v24` | `ELECTRON_RUN_AS_NODE` в окружении (терминалы из VS Code). `env -u ELECTRON_RUN_AS_NODE …` |
+| `TypeError … reading 'handle'`, вывод про `Node.js v24` | `ELECTRON_RUN_AS_NODE` в окружении (терминалы из VS Code). `npm start` и `npm run shot` его убирают; при ручном `electron .` - `env -u ELECTRON_RUN_AS_NODE …` |
 | Процесс завершается с кодом 9 | Передан `--debug`; используйте `--dev`. |
-| Окно пустое без ошибок | Нет `--no-sandbox` (см. [quickstart](quickstart.md)). |
+| Окно пустое без ошибок (Linux) | Нет `--no-sandbox` (см. [quickstart](quickstart.md)). `npm start` добавляет его сам. |
 | Страница не находит `three` | Изменился текст import map, а хеш в CSP старый; скопируйте хеш из сообщения консоли. |
 | `fetch('file://…')` в рендерере | Считается ненадёжным (в проекте не проверялось), поэтому файлы читает `window.widget.readAsset` через IPC. |
 | Анимация в скрытом окне почти стоит | Chromium почти не даёт кадров окну без показа (около 1 кадра в секунду). Тестовый режим потому и показывает окно за экраном. |
 | `pkill -f` убил и мою оболочку | Шаблон совпал с командной строкой самой оболочки. Используйте `pkill -x electron` или трюк со скобкой `[e]lectron`. |
 | Мозг «взлетает» на старте | Сеть не прогрета; `link.init(restingDrive(), …)` должен вызываться до создания мухи. |
+| Жужжание не смолкает, когда окно закрыто другими окнами (Windows) | Chromium перестаёт рисовать перекрытое окно, кадры не идут и громкость никто не обновляет. Страница на `visibilitychange` вызывает `sound.silence()`; если звук всё же остаётся, проверьте, приходит ли это событие (не проверялось). |
+| Лишний `\r` в именах групп (`unknown group …`) | `groups.txt` должен писаться с `\n` (`newline='\n'` в `build_groups.py`): Python на Windows по умолчанию пишет `\r\n`. |
 
 ```{warning}
 Не отправляйте синтетический ввод (`xdotool` и подобное) на настоящий рабочий стол, чтобы проверить виджет:

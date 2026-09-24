@@ -89,6 +89,13 @@ export class Sound {
     this.pan.pan.setTargetAtTime(clamp(pan, -1, 1) * 0.75, t, 0.05);
   }
 
+  /** Silence the buzz at once (the window stopped being painted, so nothing will update it). */
+  silence() {
+    if (!this.ctx) return;
+    this.buzzGain.gain.cancelScheduledValues(this.ctx.currentTime);
+    this.buzzGain.gain.setTargetAtTime(0, this.ctx.currentTime, 0.03);
+  }
+
   /** Glass "ting": a few inharmonic partials with fast decays. */
   ting(strength = 1) {
     if (!this.ctx || !this.enabled) return;

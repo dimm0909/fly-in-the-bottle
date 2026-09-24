@@ -90,7 +90,7 @@ add('dn_mdn', dn & (n.type == 'MDN'))                                       # mo
 add('dn_pip1', dn & (n.type == 'pIP1'))
 
 out = root / 'data/brain'
-with open(out / 'groups.txt', 'w') as f:
+with open(out / 'groups.txt', 'w', newline='\n') as f:  # LF on every platform: the C++ reader splits on it
     for name, idx in groups.items():
         f.write(f'{name}\t{",".join(map(str, idx))}\n')
 (out / 'groups.json').write_text(json.dumps({k: len(v) for k, v in groups.items()}, indent=1))

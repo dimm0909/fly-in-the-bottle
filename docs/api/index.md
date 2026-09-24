@@ -22,7 +22,9 @@
 
 | Модуль | Что содержит | Для чего нужен |
 | --- | --- | --- |
-| `main.js` | окно, меню, настройки, режим скриншота, IPC | Точка входа Electron. |
+| `main.js` | окно, меню, настройки, масштаб, режим скриншота, IPC | Точка входа Electron. |
+| `platform.js` | `windowOptions`, `applyLayer`, `isWin`, `isLinux` | Слой «на обоях» на Linux и Windows. |
+| `tools/dev.js` | `start`, `setup-brain`, `compile-brain`, `py`, `docs` | Кроссплатформенный помощник за npm-скриптами. |
 | `preload.js` | `window.widget` | Единственный канал рендерера наружу. |
 | `brain-host.js` | `BrainHost`, `available()`, `FILES` | Запускает сайдкар мозга и говорит с ним по протоколу. |
 
@@ -31,7 +33,7 @@
 | Модуль | Что содержит | Для чего нужен |
 | --- | --- | --- |
 | `src/app.js` | сцена, `pick`, `frame`, `updateThreat` | Главный цикл, ввод мыши, склейка всех модулей. |
-| `src/jar.js` | `createJar`, `JAR`, `outerRadiusAt`, `innerRadiusAt` | Банка, шейдер стекла, крышка, этикетка, тень. |
+| `src/jar.js` | `createJar`, `JAR`, `outerRadiusAt`, `innerRadiusAt` | Банка, шейдер стекла, крышка, тень. |
 | `src/env.js` | `studioEnvGLSL`, `createStudioEnvironment` | Процедурное освещение для отражений. |
 | `src/flymodel.js` | `loadFlyAssets`, `buildFlyModel`, `solveLeg`, `MM`, `BODY_H`, `INNER_LAYER` | Тело мухи из мешей, скелет, IK ног. |
 | `src/fly.js` | `Fly` | Сценарная муха и общая механика: столкновения, поза, звук. |
@@ -48,7 +50,7 @@
 | `brain/cpu.cpp` | `load_graph`, `load_groups`, `CpuBackend` | Событийный CPU-бэкенд. |
 | `brain/main.cpp` | протокол stdin/stdout | Команды сайдкара. |
 | `tools/brain_client.py` | `Brain`, `show` | Python-клиент сайдкара. |
-| `tools/*.py`, `tools/setup_brain.sh` | сборка графа, групп, скелета, проверки | Подготовка данных и контроль. |
+| `tools/*.py` | сборка графа, групп, тела мухи, проверки | Подготовка данных и контроль. |
 
 ```{toctree}
 :maxdepth: 2
